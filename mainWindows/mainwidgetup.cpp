@@ -61,6 +61,11 @@ void mainWidgetUp::initLayout()
     hyout1->addWidget(m_btnmini);
     hyout1->addWidget(m_btnexit);
     hyout1->setSpacing(12);
+
+    m_btnmobile->setVisible(false);
+    m_btnsetting->setVisible(false);
+    m_btnmini->setVisible(false);
+    m_btnexit->setVisible(false);
     // first layout end
 
     // second layout

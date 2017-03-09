@@ -30,7 +30,7 @@ volWidget::volWidget(QWidget *parent):QWidget(parent)
 #else
     QHBoxLayout *lyout=new QHBoxLayout;
     m_slider_vol=new mySlider(Qt::Horizontal,this);
-    m_slider_vol->setFixedSize(80,20);
+    m_slider_vol->setFixedSize(80,50);
     m_slider_vol->setStyleSheet("QSlider::groove:horizontal{border-radius:2px;height:4px;}"
                                 "QSlider::sub-page:horizontal{background:rgb(27,157,255);}"
                                 "QSlider::add-page:horizontal{background:rgb(209,209,209);}"

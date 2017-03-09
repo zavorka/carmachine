@@ -79,4 +79,9 @@ void settingTopWidgets::initWidget()
     hmainyout->addLayout(lyout2,1);
     hmainyout->setContentsMargins(0,0,0,0);
     setLayout(hmainyout);
+
+    m_btnmobile->setVisible(false);
+    m_btnsetting->setVisible(false);
+    m_btnmini->setVisible(false);
+    m_btnexit->setVisible(false);
 }
