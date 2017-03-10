@@ -7,6 +7,8 @@
 #include <QPaintEvent>
 #include <QWheelEvent>
 #include <QResizeEvent>
+#include <QGestureEvent>
+#include <QPinchGesture>
 
 class ImageViewer : public QWidget
 {
@@ -35,6 +37,7 @@ protected:
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
+    bool event(QEvent *event) Q_DECL_OVERRIDE;
 
 signals:
 
@@ -56,5 +59,7 @@ private:
 
     int m_suitableWidth;
     int m_suitableHeight;
+
+    qreal currentStepScaleFactor;
 };
 #endif // IMAGEBROWSER_IMAGEHANDLER_H

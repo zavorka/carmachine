@@ -68,7 +68,7 @@ public slots:
     void slot_returnanimation();
     void slot_beginSearchMedia();
 signals:
-    void usbStateChanged();
+    void beginUpdateMediaResource();
     void beginSearchMedia();
 };
 

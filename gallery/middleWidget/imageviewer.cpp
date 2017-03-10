@@ -11,7 +11,9 @@ ImageViewer::ImageViewer(QWidget *parent) : QWidget(parent)
   ,m_percentage(0.0)
   ,m_originX(0.0), m_originY(0.0)
   ,m_basicX(0.0), m_basicY(0.0)
+  ,currentStepScaleFactor(1)
 {
+//    this->grabGesture(Qt::PinchGesture);
 }
 
 void ImageViewer::setPixmap(const QPixmap &pixmap)
@@ -151,13 +153,13 @@ void ImageViewer::paintEvent(QPaintEvent *event)
 void ImageViewer::wheelEvent(QWheelEvent *event)
 {
     QWidget::wheelEvent(event);
-//    int numDegrees = event->delta() / 8;    //滚动的角度，*8就是鼠标滚动的距离
-//    int numSteps = numDegrees / 15;         //滚动的步数，*15就是鼠标滚动的角度
-//    if (event->orientation() == Qt::Horizontal) {
-//        event->accept();
-//    } else {
-//        ariseScale(numSteps);
-//    }
+    //    int numDegrees = event->delta() / 8;    //滚动的角度，*8就是鼠标滚动的距离
+    //    int numSteps = numDegrees / 15;         //滚动的步数，*15就是鼠标滚动的角度
+    //    if (event->orientation() == Qt::Horizontal) {
+    //        event->accept();
+    //    } else {
+    //        ariseScale(numSteps);
+    //    }
 }
 
 void ImageViewer::mousePressEvent(QMouseEvent *event)
@@ -231,3 +233,30 @@ void ImageViewer::mouseMoveEvent(QMouseEvent *event)
     QWidget::mouseMoveEvent(event);
 }
 
+bool ImageViewer::event(QEvent *event)
+{
+//    switch (event->type()) {
+//    case QEvent::TouchBegin:
+//    case QEvent::TouchUpdate:
+//    case QEvent::TouchEnd:
+//    {
+//        qDebug()<<"touch event come!";
+//        QTouchEvent *touchEvent = static_cast<QTouchEvent*>(event);
+//        QList<QTouchEvent::TouchPoint> touchPoints = touchEvent->touchPoints();
+//        if(touchPoints.count() == 2)
+//        {
+//            const QTouchEvent::TouchPoint &touchPoint0 = touchPoints.first();
+//            const QTouchEvent::TouchPoint &touchPoint1 = touchPoints.last();
+//            qreal currentScaleFactor =
+//                    QLineF(touchPoint0.pos(), touchPoint1.pos()).length()
+//                    / QLineF(touchPoint0.startPos(), touchPoint1.startPos()).length();
+//            qDebug()<<"currentScaleFactr:"<<currentScaleFactor;
+//            ariseScale(currentScaleFactor);
+//            return true;
+//        }
+//    }
+//    default:
+//        break;
+//    }
+    return QWidget::event(event);
+}

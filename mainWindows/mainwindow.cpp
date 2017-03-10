@@ -83,7 +83,7 @@ void mainWindow::initConnection()
     //    connect(m_galleryWid->m_topWid->m_btnreturn,SIGNAL(clicked(bool)),this,SLOT(slot_returnanimation()));
     connect(m_settingwid->m_topWid->m_btnreturn,SIGNAL(clicked(bool)),this,SLOT(slot_returnanimation()));
 
-    connect(this,SIGNAL(usbStateChanged()),this,SLOT(slot_updateMedia1()));
+    connect(this,SIGNAL(beginUpdateMediaResource()),this,SLOT(slot_updateMedia1()));
     connect(this,SIGNAL(beginSearchMedia()),this,SLOT(slot_beginSearchMedia()));
 }
 
@@ -163,9 +163,9 @@ void mainWindow::slot_updateMedia1()
 
 void mainWindow::slot_updateMedia2()
 {
-    mediaHasUpdate =false;
     mediaUpdateThread *thread = new mediaUpdateThread(this,this);
     thread->start();
+    mediaHasUpdate =false;
 }
 
 void mainWindow::slot_beginSearchMedia()
@@ -255,5 +255,5 @@ mediaUpdateThread::mediaUpdateThread(QObject *parent,mainWindow *mainWindow):QTh
 
 void mediaUpdateThread::run()
 {
-    m_mainWindow->slot_beginSearchMedia();
+    emit m_mainWindow->beginSearchMedia();
 }

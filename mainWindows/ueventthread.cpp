@@ -114,7 +114,7 @@ static void parse_event(const char *msg, struct luther_gliethttp *luther_glietht
 //               luther_gliethttp->firmware, luther_gliethttp->major, luther_gliethttp->minor);
         if(mainwid!=NULL)
         {
-            emit mainwid->usbStateChanged();
+            emit mainwid->beginUpdateMediaResource();
         }
 
     }

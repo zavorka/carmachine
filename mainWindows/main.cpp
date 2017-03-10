@@ -4,6 +4,7 @@
 #include <mainWindows/global_value.h>
 #include <global_value.h>
 #include <ueventthread.h>
+#include <inotifythread.h>
 
 int main(int argc, char *argv[])
 {
@@ -12,6 +13,8 @@ int main(int argc, char *argv[])
     ueventThread thread;
     thread.start();
 
+    inotifyThread thread2;
+    thread2.start();
 
     if(!app.isRunning())    /* application run in single mode */
     {

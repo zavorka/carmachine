@@ -141,7 +141,6 @@ void musicWidgets::slot_onStateChanged(QMediaPlayer::State state)
 
 void musicWidgets::slot_onCurrentMediaChanged(QMediaContent content)
 {
-    qDebug()<<"this";
     m_middlewid->m_leftWid->m_Swidget0->updatePlayingItemStyle(content);
     m_bottomwid->setCurrentSongName(m_middlewid->m_leftWid->m_Swidget0->getCurPlayingSongName());
 }
