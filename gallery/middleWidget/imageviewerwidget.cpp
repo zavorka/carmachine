@@ -17,6 +17,8 @@ int layout_spacing = 30;
 
 imageViewerWidget::imageViewerWidget(QWidget *parent):baseWidget(parent)
 {
+    setObjectName("imageViewerWidget");
+    setStyleSheet("#imageViewerWidget{background:rgb(0,0,0)}");
     m_middleWidgets = (galleryMiddleWidgets*)parent;
     initLayout();
     initConnection();
@@ -24,14 +26,15 @@ imageViewerWidget::imageViewerWidget(QWidget *parent):baseWidget(parent)
 
 void imageViewerWidget::initLayout()
 {
-    QStackedLayout *mainLayout = new QStackedLayout;
-    mainLayout->setStackingMode(QStackedLayout::StackAll);
+    QVBoxLayout *mainLayout = new QVBoxLayout;
+    //    mainLayout->setStackingMode(QStackedLayout::StackAll);
 
     m_imageViewer = new ImageViewer(this);
     m_imageControler = new ImageControler(this);
-
-    mainLayout->addWidget(m_imageControler);
+    mainLayout->addSpacing(20);
     mainLayout->addWidget(m_imageViewer);
+    mainLayout->addWidget(m_imageControler);
+    mainLayout->addSpacing(30);
     mainLayout->setMargin(0);
 
     setLayout(mainLayout);

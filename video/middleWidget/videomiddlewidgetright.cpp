@@ -90,7 +90,7 @@ void videoMiddleWidgetRight::beginSearchFromPath(QString path)
     m_playList->clearList();
 
     QStringList filter;
-    filter<<"mp4"<<"avi"<<"mp3"<<"rm"<<"rmvb"<<"wmv"<<"mkv";
+    filter<<"mp4"<<"avi"<<"rm"<<"rmvb"<<"wmv"<<"mkv";
     //    QMediaPlayer player;
     //    QEventLoop lp;
     QFileInfoList fileList = getFileList(path);

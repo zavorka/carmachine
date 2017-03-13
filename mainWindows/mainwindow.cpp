@@ -236,10 +236,11 @@ void mainWindow::keyPressEvent(QKeyEvent *event)
         QWidget::keyPressEvent(event);
         break;
     case 0:   // when key_power enter
-        if(m_stackedWid->currentWidget()==m_videoWid){
-            m_videoWid->setPlayerPause();
-        }
-        QTimer::singleShot(100, this, SLOT(slot_standby()));
+        qDebug()<<"0 key pressed";
+//        if(m_stackedWid->currentWidget()==m_videoWid){
+//            m_videoWid->setPlayerPause();
+//        }
+//        QTimer::singleShot(100, this, SLOT(slot_standby()));
         break;
     default:
         break;

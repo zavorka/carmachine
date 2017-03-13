@@ -13,7 +13,8 @@ ImageViewer::ImageViewer(QWidget *parent) : QWidget(parent)
   ,m_basicX(0.0), m_basicY(0.0)
   ,currentStepScaleFactor(1)
 {
-//    this->grabGesture(Qt::PinchGesture);
+    setAttribute(Qt::WA_AcceptTouchEvents);
+    this->grabGesture(Qt::PinchGesture);
 }
 
 void ImageViewer::setPixmap(const QPixmap &pixmap)
@@ -153,110 +154,100 @@ void ImageViewer::paintEvent(QPaintEvent *event)
 void ImageViewer::wheelEvent(QWheelEvent *event)
 {
     QWidget::wheelEvent(event);
-    //    int numDegrees = event->delta() / 8;    //滚动的角度，*8就是鼠标滚动的距离
-    //    int numSteps = numDegrees / 15;         //滚动的步数，*15就是鼠标滚动的角度
-    //    if (event->orientation() == Qt::Horizontal) {
-    //        event->accept();
-    //    } else {
-    //        ariseScale(numSteps);
-    //    }
+    int numDegrees = event->delta() / 8;    //滚动的角度，*8就是鼠标滚动的距离
+    int numSteps = numDegrees / 15;         //滚动的步数，*15就是鼠标滚动的角度
+    if (event->orientation() == Qt::Horizontal) {
+        event->accept();
+    } else {
+        ariseScale(numSteps);
+    }
 }
 
 void ImageViewer::mousePressEvent(QMouseEvent *event)
 {
-    //    if( event->button() == Qt::LeftButton  )
-    //    {
-    //        QCursor cursor;
-    //        cursor.setShape( Qt::OpenHandCursor );
-    //        setCursor( cursor );
+    if( event->button() == Qt::LeftButton  )
+    {
+        m_pressPoint = event->pos();
+    }
+    else if( event->button() == Qt::RightButton )
+    {
+        emit rightButtonClicked();
+    }
 
-    //        m_pressPoint = event->pos();
-    //    }
-    //    else if( event->button() == Qt::RightButton )
-    //    {
-    //        emit rightButtonClicked();
-    //    }
     QWidget::mousePressEvent(event);
 }
 
 void ImageViewer::mouseReleaseEvent(QMouseEvent *event)
 {
-    //    Q_UNUSED(event);
-    //    if( event->button() == Qt::LeftButton )
-    //    {
-    //        QCursor cursor;
-    //        cursor.setShape( Qt::ArrowCursor );
-    //        setCursor( cursor );
-
-    //        m_basicX = m_originX;
-    //        m_basicY = m_originY;
-    //    }
+    Q_UNUSED(event);
+    if( event->button() == Qt::LeftButton )
+    {
+        m_basicX = m_originX;
+        m_basicY = m_originY;
+    }
     QWidget::mouseReleaseEvent(event);
 }
 
 void ImageViewer::mouseMoveEvent(QMouseEvent *event)
 {
-    //    //鼠标相对于屏幕的位置
-    //    QPoint move_pos = event->pos();
-    //    QCursor cursor;
-    //    cursor.setShape( Qt::OpenHandCursor );
+    if(m_pressPoint != QPoint(-1,-1))
+    {
+        //鼠标相对于屏幕的位置
+        QPoint move_pos = event->pos();
 
-    //    if( rect().contains(event->pos()) )
-    //    {
-    //        move_pos -= m_pressPoint;
-    //        m_originX = m_basicX + move_pos.x()/m_scale;
-    //        m_originY = m_basicY + move_pos.y()/m_scale;
-    //        update();
-    //    }
-    //    else
-    //    {
-    //        QPoint point;
-    //        if( event->pos().x() < 0 )
-    //        {
-    //            point = QPoint( 0, event->pos().y() );
-    //        }
-    //        else if( event->pos().x() > rect().width()-1 )
-    //        {
-    //            point = QPoint( rect().width()-1, event->pos().y() );
-    //        }
-    //        else if( event->pos().y() < 0 )
-    //        {
-    //            point = QPoint( event->pos().x(), 0 );
-    //        }
-    //        else if( event->pos().y() > rect().height()-1 )
-    //        {
-    //            point = QPoint( event->pos().x(), rect().height()-1 );
-    //        }
-    //        cursor.setPos( mapToGlobal(point) );
-    //        setCursor(cursor);
-    //    }
+        if( rect().contains(event->pos()) )
+        {
+            move_pos -= m_pressPoint;
+            m_originX = m_basicX + move_pos.x()/m_scale;
+            m_originY = m_basicY + move_pos.y()/m_scale;
+            update();
+        }
+        else
+        {
+            QPoint point;
+            if( event->pos().x() < 0 )
+            {
+                point = QPoint( 0, event->pos().y() );
+            }
+            else if( event->pos().x() > rect().width()-1 )
+            {
+                point = QPoint( rect().width()-1, event->pos().y() );
+            }
+            else if( event->pos().y() < 0 )
+            {
+                point = QPoint( event->pos().x(), 0 );
+            }
+            else if( event->pos().y() > rect().height()-1 )
+            {
+                point = QPoint( event->pos().x(), rect().height()-1 );
+            }
+        }
+    }
     QWidget::mouseMoveEvent(event);
 }
 
 bool ImageViewer::event(QEvent *event)
 {
-//    switch (event->type()) {
-//    case QEvent::TouchBegin:
-//    case QEvent::TouchUpdate:
-//    case QEvent::TouchEnd:
-//    {
-//        qDebug()<<"touch event come!";
-//        QTouchEvent *touchEvent = static_cast<QTouchEvent*>(event);
-//        QList<QTouchEvent::TouchPoint> touchPoints = touchEvent->touchPoints();
-//        if(touchPoints.count() == 2)
-//        {
-//            const QTouchEvent::TouchPoint &touchPoint0 = touchPoints.first();
-//            const QTouchEvent::TouchPoint &touchPoint1 = touchPoints.last();
-//            qreal currentScaleFactor =
-//                    QLineF(touchPoint0.pos(), touchPoint1.pos()).length()
-//                    / QLineF(touchPoint0.startPos(), touchPoint1.startPos()).length();
-//            qDebug()<<"currentScaleFactr:"<<currentScaleFactor;
-//            ariseScale(currentScaleFactor);
-//            return true;
-//        }
-//    }
-//    default:
-//        break;
-//    }
+    if(event->type() == QEvent::Gesture)
+    {
+        QGestureEvent *gestureEvent = static_cast<QGestureEvent*>(event);
+        if(QGesture *gesture = gestureEvent->gesture(Qt::PinchGesture))
+        {
+            m_pressPoint = QPoint(-1,-1);
+            QPinchGesture *pinchGesture = static_cast<QPinchGesture*>(gesture);
+            QPinchGesture::ChangeFlags changeFlags = pinchGesture->changeFlags();
+            if(changeFlags & QPinchGesture::ScaleFactorChanged)
+            {
+                if(pinchGesture->totalScaleFactor()>1.7)
+                {
+                    ariseScale(1);
+                }
+                else if(pinchGesture->totalScaleFactor()<0.3)
+                {
+                    ariseScale(-1);
+                }
+            }
+        }
+    }
     return QWidget::event(event);
 }

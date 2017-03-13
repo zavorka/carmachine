@@ -15,7 +15,7 @@ TEMPLATE = app
 DEFINES += CONFIG_CTRL_IFACE
 
 # 3399Linux、Big DPI
-####DEFINES += DEVICE_EVB
+DEFINES += DEVICE_EVB
 
 CONFIG	+= qt warn_on release
 
