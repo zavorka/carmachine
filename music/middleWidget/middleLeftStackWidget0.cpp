@@ -51,7 +51,6 @@ void middleLeftStackWidget0::initConnection()
 {
     connect(m_header,SIGNAL(sig_addSong()),this,SLOT(slot_addSong()));
 
-    connect(m_table,SIGNAL(cellClicked(int,int)),this,SLOT(slot_itemDoubleClick(int,int)));
 }
 
 void middleLeftStackWidget0::setInitMainWidgets(musicWidgets *musicWidgets)
@@ -193,15 +192,6 @@ void middleLeftStackWidget0::slot_addSong()
     }
 }
 
-void middleLeftStackWidget0::slot_itemDoubleClick(int row,int)
-{
-    QUrl url= m_playlist->mediaUrl(row);
-    if(!url.isEmpty())
-    {
-        m_mainwid->getPlayer()->setMedia(url);
-        m_mainwid->getPlayer()->play();
-    }
-}
 
 void middleLeftStackWidget0::updatePlayingItemStyle(QMediaContent content)
 {

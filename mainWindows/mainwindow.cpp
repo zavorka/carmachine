@@ -236,7 +236,6 @@ void mainWindow::keyPressEvent(QKeyEvent *event)
         QWidget::keyPressEvent(event);
         break;
     case 0:   // when key_power enter
-        qDebug()<<"0 key pressed";
 //        if(m_stackedWid->currentWidget()==m_videoWid){
 //            m_videoWid->setPlayerPause();
 //        }

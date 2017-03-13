@@ -73,6 +73,8 @@ void videoWidgets::initPlayerAndConnection()
     connect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(slot_onMediaPositionChanged(qint64)));
     connect(m_player, SIGNAL(durationChanged(qint64)), this, SLOT(slot_onDurationChanged(qint64)));
     //    connect(m_player, SIGNAL(error(QMediaPlayer::Error)), this, SLOT(onErrorAppear(QMediaPlayer::Error)));
+    connect(m_player,SIGNAL(error(QMediaPlayer::Error)),this,SLOT(slot_onErrorOn(QMediaPlayer::Error)));
+    connect(m_player,SIGNAL(audioAvailableChanged(bool)),this,SLOT(slot_onAudioAvailableChanged(bool)));
 
     connect(m_middleWid->m_rightWid->m_localTable,SIGNAL(cellClicked(int,int)),this,SLOT(slot_onLocalListItemDoubleClick(int,int)));
     connect(m_bottomWid->m_btnPlayPause,SIGNAL(clicked(bool)),this,SLOT(slot_setPlayPause()));
@@ -86,6 +88,16 @@ void videoWidgets::initPlayerAndConnection()
     connect(m_middleWid->m_leftWid,SIGNAL(sig_sliderPositionChanged(int)),this,SLOT(slot_onSliderPositionChanged(int)));
 
     connect(m_topWid->m_btnreturn,SIGNAL(clicked(bool)),this,SLOT(slot_setPause()));
+}
+
+void videoWidgets::slot_onErrorOn(QMediaPlayer::Error error)
+{
+    //    qDebug()<<"errorString:"<<m_player->errorString();
+}
+
+void videoWidgets::slot_onAudioAvailableChanged(bool isOK)
+{
+    //    qDebug()<<"audioAvailable: "<<isOK;
 }
 
 void videoWidgets::slot_onMediaStateChanged(QMediaPlayer::MediaStatus status)
@@ -121,17 +133,30 @@ void videoWidgets::slot_onCurrentMediaChanged(QMediaContent content)
     m_topWid->setPlayingVideoName(m_middleWid->m_rightWid->getCurrentVideoName());
 }
 
+void videoWidgets::slot_denyPlay()
+{
+    m_player->setMedia(m_onPlayUrl);
+    m_player->play();
+}
+
 void videoWidgets::slot_onLocalListItemDoubleClick(int row, int)
 {
+#ifdef DEVICE_EVB
     m_player->stop();
     QUrl url= m_middleWid->m_rightWid->getVideoList()->getUrlAt(row);
-    if(!url.isEmpty())
-    {
-        if(m_player->isAvailable()){
-            m_player->setMedia(url);
-            m_player->play();
-        }
+    if(m_player->isAvailable()){
+        m_player->setMedia(url);
+        m_player->play();
     }
+#else
+    m_player->stop();
+    m_player->setMedia(NULL);
+    QUrl url= m_middleWid->m_rightWid->getVideoList()->getUrlAt(row);
+    m_onPlayUrl = url;
+    if(m_player->isAvailable()){
+        QTimer::singleShot(200,this,SLOT(slot_denyPlay()));
+    }
+#endif
 }
 
 void videoWidgets::slot_setPlayPause()
@@ -148,22 +173,42 @@ void videoWidgets::slot_setPlayPause()
 
 void videoWidgets::slot_nextVideo()
 {
+#ifdef DEVICE_EVB
     m_player->stop();
     videoList *m_playList = m_middleWid->m_rightWid->getVideoList();
     if(m_player->isAvailable()){
         m_player->setMedia(m_playList->getNextVideoUrl());
         m_player->play();
     }
+#else
+    m_player->stop();
+    m_player->setMedia(NULL);
+    videoList *m_playList = m_middleWid->m_rightWid->getVideoList();
+    m_onPlayUrl = m_playList->getNextVideoUrl();
+    if(m_player->isAvailable()){
+        QTimer::singleShot(200,this,SLOT(slot_denyPlay()));
+    }
+#endif
 }
 
 void videoWidgets::slot_lastVideo()
 {
+#ifdef DEVICE_EVB
     m_player->stop();
     videoList *m_playList = m_middleWid->m_rightWid->getVideoList();
     if(m_player->isAvailable()){
         m_player->setMedia(m_playList->getPreVideoUrl());
         m_player->play();
     }
+#else
+    m_player->stop();
+    m_player->setMedia(NULL);
+    videoList *m_playList = m_middleWid->m_rightWid->getVideoList();
+    m_onPlayUrl = m_playList->getPreVideoUrl();
+    if(m_player->isAvailable()){
+        QTimer::singleShot(200,this,SLOT(slot_denyPlay()));
+    }
+#endif
 }
 
 void videoWidgets::slot_onContentDoubleClick()

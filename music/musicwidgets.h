@@ -29,6 +29,8 @@ public:
 private:
     QMediaPlayer *m_player;
 
+    QUrl m_onPlayUrl;
+
     void initLayout();
     void initConnection();
     void initPlayerAndConnection();
@@ -48,6 +50,9 @@ private slots:
     void slot_onStateChanged(QMediaPlayer::State);
     void slot_onPositonChanged(qint64);
     void slot_onDuratuonChanged(qint64);
+
+    void slot_itemDoubleClick(int,int);
+    void slot_denyPlay();
 public slots:
     void slot_onCurrentMediaChanged(QMediaContent);
 protected:

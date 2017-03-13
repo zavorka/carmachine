@@ -29,6 +29,7 @@ public:
     QMediaPlayer* getPlayer(){return m_player;}
 private:
     QMediaPlayer *m_player;
+    QUrl m_onPlayUrl;
 
     void initLayout();
     void initPlayerAndConnection();
@@ -52,6 +53,10 @@ private slots:
     void slot_setPause();
 
     void slot_onContentDoubleClick(); // 双击videoWidget,设置全屏或者取消全屏
+
+    void slot_denyPlay();
+    void slot_onErrorOn(QMediaPlayer::Error);
+    void slot_onAudioAvailableChanged(bool);
 };
 
 #endif // VIDEOWIDGETS_H

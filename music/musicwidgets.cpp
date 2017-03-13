@@ -54,6 +54,8 @@ void musicWidgets::initConnection()
     connect(m_playmodewid,SIGNAL(sig_CurrentModeChange(PlayMode)),this,SLOT(slot_setPlayMode(PlayMode)));
     connect(m_bottomwid->m_volwid,SIGNAL(sig_valueChanged(int)),this,SLOT(slot_volumeChanged(int)));
     connect(m_topwid->m_btnreturn,SIGNAL(clicked(bool)),this,SLOT(slot_setPause()));
+
+    connect(m_middlewid->m_leftWid->m_Swidget0->m_table,SIGNAL(cellClicked(int,int)),this,SLOT(slot_itemDoubleClick(int,int)));
 }
 
 void musicWidgets::initPlayerAndConnection()
@@ -164,24 +166,72 @@ void musicWidgets::slot_setPlayMode(PlayMode mode)
     m_middlewid->m_leftWid->m_Swidget0->m_playlist->setPlayMode(mode);
 }
 
+void musicWidgets::slot_denyPlay()
+{
+    m_player->setMedia(m_onPlayUrl);
+    m_player->play();
+}
+
+void musicWidgets::slot_itemDoubleClick(int row,int)
+{
+#ifdef DEVICE_EVB
+    mediaList *playlist = m_middlewid->m_leftWid->m_Swidget0->m_playlist;
+    QUrl url= playlist->mediaUrl(row);
+    if(!url.isEmpty())
+    {
+        m_player->setMedia(url);
+        m_player->play();
+    }
+#else
+    m_player->setMedia(NULL);
+    mediaList *playlist = m_middlewid->m_leftWid->m_Swidget0->m_playlist;
+    m_onPlayUrl= playlist->mediaUrl(row);
+    if(!m_onPlayUrl.isEmpty())
+    {
+        QTimer::singleShot(200,this,SLOT(slot_denyPlay()));
+    }
+#endif
+}
+
+
 void musicWidgets::slot_nextSong()
 {
+#ifdef DEVICE_EVB
     mediaList *playlist = m_middlewid->m_leftWid->m_Swidget0->m_playlist;
     if(playlist->getUrlList().size()>0){
         int curIndex = playlist->nextSong();
         m_player->setMedia(playlist->mediaUrl(curIndex));
         m_player->play();
     }
+#else
+    m_player->setMedia(NULL);
+    mediaList *playlist = m_middlewid->m_leftWid->m_Swidget0->m_playlist;
+    if(playlist->getUrlList().size()>0){
+        int curIndex = playlist->nextSong();
+        m_onPlayUrl = playlist->mediaUrl(curIndex);
+        QTimer::singleShot(200,this,SLOT(slot_denyPlay()));
+    }
+#endif
 }
 
 void musicWidgets::slot_preSong()
 {
+#ifdef DEVICE_EVB
     mediaList *playlist = m_middlewid->m_leftWid->m_Swidget0->m_playlist;
     if(playlist->getUrlList().size()>0){
         int curIndex = playlist->preSong();
         m_player->setMedia(playlist->mediaUrl(curIndex));
         m_player->play();
     }
+#else
+    m_player->setMedia(NULL);
+    mediaList *playlist = m_middlewid->m_leftWid->m_Swidget0->m_playlist;
+    if(playlist->getUrlList().size()>0){
+        int curIndex = playlist->preSong();
+        m_onPlayUrl = playlist->mediaUrl(curIndex);
+        QTimer::singleShot(200,this,SLOT(slot_denyPlay()));
+    }
+#endif
 }
 
 void musicWidgets::slot_playOrPause()

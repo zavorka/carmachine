@@ -64,7 +64,7 @@ public:
 
 private slots:
     void slot_addSong();
-    void slot_itemDoubleClick(int,int);
+//    void slot_itemDoubleClick(int,int);
 private:
     musicWidgets *m_mainwid;
 
