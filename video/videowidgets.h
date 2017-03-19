@@ -56,7 +56,6 @@ private slots:
 
     void slot_denyPlay();
     void slot_onErrorOn(QMediaPlayer::Error);
-    void slot_onAudioAvailableChanged(bool);
 };
 
 #endif // VIDEOWIDGETS_H

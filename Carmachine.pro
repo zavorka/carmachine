@@ -4,9 +4,10 @@
 #
 #-------------------------------------------------
 
-QT       += core gui sql network multimedia multimediawidgets quickwidgets
+QT       += core gui sql network multimedia multimediawidgets quickwidgets bluetooth
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
 
 TARGET = Carmachine
 LANGUAGE = C++
@@ -67,6 +68,7 @@ SOURCES +=$$PWD/singleApplication/qsingleapplication.cpp \
 HEADERS +=$$PWD/singleApplication/qsingleapplication.h \
 
 FORMS = networkconfig.ui \
+        btscanner.ui
 
 RESOURCES += \
     res_main.qrc\

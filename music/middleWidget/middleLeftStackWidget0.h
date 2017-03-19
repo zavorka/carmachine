@@ -44,6 +44,9 @@ class middleLeftStackWidget0: public baseWidget
 public:
     explicit middleLeftStackWidget0(QWidget *parent);
 
+    void updateResUi(QFileInfoList fileList);
+    QFileInfoList findMusicFiles(const QString& path);
+
     mediaList *m_playlist;
     // ui
     playListHeader *m_header;
@@ -52,11 +55,7 @@ public:
     void initLayout();
     void initConnection();
     void addToPlayList(const QString &name,const QString &url,const QString &duration);
-//    void getListfromDateBase();
-    void beginSearchFromPath(QString path);
     void updateSongCountLabel();
-    // 从Path路径下搜索所有文件
-    QFileInfoList getFileList(QString path);
 
     void setInitMainWidgets(musicWidgets*);
     void updatePlayingItemStyle(QMediaContent);

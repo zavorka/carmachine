@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <sys/inotify.h>
 #include <unistd.h>
+#include <QDirIterator>
 
 #define EVENT_NUM 12
 #include "global_value.h"
@@ -47,8 +48,22 @@ void inotifyThread::run()
         return;
     }
 
+
+    QDirIterator it(MUSIC_SEARCH_PATH,QDir::Dirs);
+    while (it.hasNext())
+    {
+        QString name = it.next();
+        QFileInfo info(name);
+        if (info.isDir())
+        {
+            inotify_add_watch(fd, info.absolutePath().toLatin1().data(),
+                                       IN_CREATE | IN_DELETE | IN_DELETE_SELF);
+
+        }
+    }
+
     wd = inotify_add_watch(fd, MUSIC_SEARCH_PATH.toLatin1().data(),
-                           IN_CREATE | IN_DELETE | IN_DELETE_SELF | IN_MODIFY | IN_MOVE_SELF | IN_MOVED_FROM | IN_MOVED_TO);
+                           IN_CREATE | IN_DELETE | IN_DELETE_SELF );
 
     buf[sizeof(buf) - 1] = 0;
     while( (len = read(fd, buf, sizeof(buf) - 1)) > 0 )

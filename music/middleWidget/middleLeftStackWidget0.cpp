@@ -7,6 +7,7 @@
 #include <QTime>
 #include <QDir>
 #include <QFileDialog>
+#include <QDirIterator>
 #include "global_value.h"
 
 #ifdef DEVICE_EVB
@@ -27,9 +28,6 @@ middleLeftStackWidget0::middleLeftStackWidget0(QWidget*parent):baseWidget(parent
 
     initLayout();
     initConnection();
-
-    // 初始化音乐列表数据
-    beginSearchFromPath(MUSIC_SEARCH_PATH);
 }
 
 void middleLeftStackWidget0::initLayout()
@@ -71,48 +69,45 @@ void middleLeftStackWidget0::addToPlayList(const QString &name,const QString &pa
     updateSongCountLabel();
 }
 
-// 初始化_从数据库中获取音乐信息
-//void middleLeftStackWidget0::getListfromDateBase()
-//{
-//    QVector<QStringList> vec= mediaDataBase::getSongInfo();
-//    QStringList listname=vec.at(0);
-//    QStringList listpath=vec.at(1);
-//    QStringList listduration=vec.at(2);
-//    for(int i=0;i<listname.count();i++)
-//    {
-//        m_table->insertRow(i);
-//        m_table->setItem(i,1,new QTableWidgetItem(listname.value(i)));
-//        m_table->setItem(i,2,new QTableWidgetItem(listduration.value(i)));
-//        m_table->item(i,2)->setTextAlignment(Qt::AlignVCenter|Qt::AlignRight);
-//        m_playlist->addPlayList(listpath.value(i));
-//    }
-//    updateSongCountLabel();
-//}
-
-
 void middleLeftStackWidget0::updateSongCountLabel()
 {
     m_header->m_listInfo->setText(str_song_list+QString("[%1]").arg(QString::number(m_table->rowCount())));
 }
 
-// 搜索path路径下的所有文件
-QFileInfoList middleLeftStackWidget0::getFileList(QString path){
-    QDir *dir=new QDir(path);
-    QFileInfoList file_list = dir->entryInfoList(QDir::Files | QDir::Hidden | QDir::NoSymLinks);
-    QFileInfoList folder_list = dir->entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
+/**
+ * @brief used to find all music file in path
+ * @param path
+ * @return
+ */
+QFileInfoList middleLeftStackWidget0::findMusicFiles(const QString& path)
+{
+    QFileInfoList musicFiles;
 
-    for(int i = 0; i != folder_list.size(); i++){
-        QString name = folder_list.at(i).absoluteFilePath();
-        QFileInfoList child_file_list = getFileList(name);
-        file_list.append(child_file_list);
+    QDirIterator it(path,QDir::Files|QDir::Dirs|QDir::NoDotAndDotDot);
+    while (it.hasNext())
+    {
+        QString name = it.next();
+        QFileInfo info(name);
+        if (info.isDir())
+        {
+            musicFiles.append(findMusicFiles(name));
+        }
+        else
+        {
+            if (info.suffix() == "mp3" || info.suffix() == "wave" || info.suffix() == "wma"
+                    ||info.suffix() == "ogg" || info.suffix() == "midi" || info.suffix() == "ra"
+                    ||info.suffix() == "mod")
+            {
+                musicFiles.append(info);
+            }
+        }
     }
-    return file_list;
+    return musicFiles;
 }
 
 
-// 从path路径下搜索所有mp3文件并添加到list
-void middleLeftStackWidget0::beginSearchFromPath(QString path){
-    //reset list
+void middleLeftStackWidget0::updateResUi(QFileInfoList fileList)
+{
     for(int i = m_table->rowCount();i > 0;i--)
     {
         m_table->removeRow(0);
@@ -120,74 +115,32 @@ void middleLeftStackWidget0::beginSearchFromPath(QString path){
     m_playlist->clearList();
     updateSongCountLabel();
 
-    QStringList filter;
-    filter<<".mp3";
-    //    QMediaPlayer player;
-    //    QEventLoop lp;
-    QFileInfoList fileList = getFileList(path);
     for(int i=0;i<fileList.size();i++){
         QFileInfo fileInfo = fileList.at(i);
-        for(int j=0;j<filter.size();j++){
-            // 如果是后缀为mp3的文件
-            if(!m_playlist->getUrlList().contains(QUrl::fromLocalFile(fileInfo.absoluteFilePath()))&&fileInfo.fileName().endsWith(filter.at(j))){
-                //                player.setMedia(QUrl::fromLocalFile(fileInfo.absoluteFilePath()));
-                //                //prevent the loop dont stop
-                //                QTimer timer;
-                //                connect(&timer,&QTimer::timeout,[&](){
-                //                    lp.quit();
-                //                });
-                //                timer.setSingleShot(true);
-                //                timer.start(2000);
-
-                //                connect(&player,SIGNAL(durationChanged(qint64)),&lp,SLOT(quit()));
-                //                lp.exec();
-                //                qint64 musicTime= player.duration();
-                //                QTime total_time(0, (musicTime/60000)%60, (musicTime/1000)%60);
-                //                QString duration=total_time.toString("mm:ss");
-                //                if(musicTime>0){
-                addToPlayList(fileInfo.baseName(),fileInfo.absoluteFilePath()," ");
-                //                }
-            }
+        if(!m_playlist->getUrlList().contains(QUrl::fromLocalFile(fileInfo.absoluteFilePath()))){
+            addToPlayList(fileInfo.baseName(),fileInfo.absoluteFilePath()," ");
         }
     }
     m_curPlayingIndex = -1;
 }
 
+
 void middleLeftStackWidget0::slot_addSong()
 {
-    static QString  initialName = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
-    QStringList files=QFileDialog::getOpenFileNames(this, tr("Select File"), initialName, tr("*.mp3"));
-    if(files.isEmpty())
-        return;
-
-    //    QMediaPlayer player;
-    //    QEventLoop lp;
-    for(int i=0;i<files.count();i++)
+    QFileDialog *dialog = new QFileDialog(mainwid,"selete file");
+    if(dialog->exec()==QFileDialog::Accepted)
     {
-        QFileInfo info(files[i]);
-        QString m_name=info.baseName();
-        if(!m_playlist->getUrlList().contains(QUrl::fromLocalFile(files.value(i))))
+        QStringList files = dialog->selectedFiles();
+        if(files.isEmpty())
+            return;
+        for(int i=0;i<files.count();i++)
         {
-            //            QString filePath=files.value(i);
-            //            // to get the infomation of music
-            //            player.setMedia(QUrl::fromLocalFile(filePath));
-            //            //prevent the loop dont stop
-            //            QTimer timer;
-            //            connect(&timer,&QTimer::timeout,[&](){
-            //                lp.quit();
-            //            });
-            //            timer.setSingleShot(true);
-            //            timer.start(2000);
-
-            //            connect(&player,SIGNAL(durationChanged(qint64)),&lp,SLOT(quit()));
-            //            lp.exec();
-            //            qint64 musicTime= player.duration();
-            //            QTime total_time(0, (musicTime/60000)%60, (musicTime/1000)%60);
-            //            QString duration=total_time.toString("mm:ss");
-
-            //            if(musicTime>0){
-            addToPlayList(m_name,files.at(i)," ");
-            //            }
+            QFileInfo info(files[i]);
+            if(!m_playlist->getUrlList().contains(QUrl::fromLocalFile(files.value(i)))&&info.exists())
+            {
+                QString m_name=info.baseName();
+                addToPlayList(m_name,files.at(i)," ");
+            }
         }
     }
 }
@@ -227,7 +180,6 @@ void middleLeftStackWidget0::updatePlayingItemStyle(QMediaContent content)
 }
 
 
-// 头标识
 playListHeader::playListHeader(QWidget*parent):baseWidget(parent)
 {
     setFixedHeight(header_height);
@@ -263,16 +215,16 @@ void playListHeader::initMenu()
 {
     m_menu=new QMenu;
     QAction *act_addsong=new QAction(str_add_song,m_menu);
-    QAction* act_emptyList=new QAction(str_clear_list,m_menu);
+    //    QAction* act_emptyList=new QAction(str_clear_list,m_menu);
 
     m_menu->addAction(act_addsong);
-    m_menu->addAction(act_emptyList);
+    //    m_menu->addAction(act_emptyList);
     m_menu->addAction(new QAction("1111",m_menu));
     m_menu->addAction(new QAction("2222",m_menu));
     m_menu->addAction(new QAction("3333",m_menu));
 
     connect(act_addsong,SIGNAL(triggered(bool)),this,SIGNAL(sig_addSong()));
-    connect(act_emptyList,SIGNAL(triggered(bool)),this,SIGNAL(sig_emptyList()));
+    //    connect(act_emptyList,SIGNAL(triggered(bool)),this,SIGNAL(sig_emptyList()));
 
     connect(m_btnmenu,SIGNAL(clicked(bool)),this,SLOT(slot_menuRequest()));
 }

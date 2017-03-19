@@ -57,7 +57,6 @@ void wlanListTable::init()
 
     setStyleSheet("QTableWidget{background:rgb(27,29,36)}"
                   "QTableWidget{color:rgb(255,255,255);}"
-                  "QTableWidget{border-radius:15px}"
                   "QTableWidget::item:selected{background:rgb(27,29,36);}"
                   "QTableWidget::item{selection-color:rgb(255,255,255);}");
 

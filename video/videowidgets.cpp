@@ -72,9 +72,8 @@ void videoWidgets::initPlayerAndConnection()
     connect(m_player,SIGNAL(currentMediaChanged(QMediaContent)),this,SLOT(slot_onCurrentMediaChanged(QMediaContent)));
     connect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(slot_onMediaPositionChanged(qint64)));
     connect(m_player, SIGNAL(durationChanged(qint64)), this, SLOT(slot_onDurationChanged(qint64)));
-    //    connect(m_player, SIGNAL(error(QMediaPlayer::Error)), this, SLOT(onErrorAppear(QMediaPlayer::Error)));
+
     connect(m_player,SIGNAL(error(QMediaPlayer::Error)),this,SLOT(slot_onErrorOn(QMediaPlayer::Error)));
-    connect(m_player,SIGNAL(audioAvailableChanged(bool)),this,SLOT(slot_onAudioAvailableChanged(bool)));
 
     connect(m_middleWid->m_rightWid->m_localTable,SIGNAL(cellClicked(int,int)),this,SLOT(slot_onLocalListItemDoubleClick(int,int)));
     connect(m_bottomWid->m_btnPlayPause,SIGNAL(clicked(bool)),this,SLOT(slot_setPlayPause()));
@@ -90,15 +89,12 @@ void videoWidgets::initPlayerAndConnection()
     connect(m_topWid->m_btnreturn,SIGNAL(clicked(bool)),this,SLOT(slot_setPause()));
 }
 
-void videoWidgets::slot_onErrorOn(QMediaPlayer::Error error)
+void videoWidgets::slot_onErrorOn(QMediaPlayer::Error )
 {
-    //    qDebug()<<"errorString:"<<m_player->errorString();
+    m_player->setMedia(NULL);
+    setOriginState();
 }
 
-void videoWidgets::slot_onAudioAvailableChanged(bool isOK)
-{
-    //    qDebug()<<"audioAvailable: "<<isOK;
-}
 
 void videoWidgets::slot_onMediaStateChanged(QMediaPlayer::MediaStatus status)
 {

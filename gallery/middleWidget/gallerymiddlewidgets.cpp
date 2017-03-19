@@ -13,7 +13,6 @@ galleryMiddleWidgets::galleryMiddleWidgets(QWidget *parent):baseWidget(parent)
     setStyleSheet("#galleryMiddleWidgets{background:rgb(43,45,51)}");
     initLayout();
     initConnection();
-    updateRes(); // init m_images
 }
 
 /**
@@ -21,7 +20,7 @@ galleryMiddleWidgets::galleryMiddleWidgets(QWidget *parent):baseWidget(parent)
  * @param path
  * @return
  */
-QFileInfoList findImgFiles(const QString& path = QString(""))
+QFileInfoList findImgFiles(const QString& path)
 {
     QFileInfoList imageFiles;
 
@@ -36,7 +35,9 @@ QFileInfoList findImgFiles(const QString& path = QString(""))
         }
         else
         {
-            if (info.suffix() == "jpg" || info.suffix() == "bmp" || info.suffix() == "png")
+            if (info.suffix() == "jpg" || info.suffix() == "bmp" || info.suffix() == "png"
+                    ||info.suffix() == "bmp" || info.suffix() == "jpeg" || info.suffix() == "titf"
+                    ||info.suffix() == "svg")
             {
                 imageFiles.append(info);
             }
@@ -46,21 +47,34 @@ QFileInfoList findImgFiles(const QString& path = QString(""))
 }
 
 
-void galleryMiddleWidgets::updateRes()
+/**
+ * @brief used to find all image Res in path
+ * @param path
+ * @return
+ */
+QMap<QString,QImage> galleryMiddleWidgets::getImageResFromPath(const QString& path)
+{
+    QFileInfoList imageFiles = findImgFiles(path);
+    QMap<QString,QImage> imageRes;
+
+    QImage tempImage;
+    for(int i = 0;i < imageFiles.size();i++)
+    {
+        if(tempImage.load(imageFiles.at(i).absoluteFilePath()))
+        {
+            imageRes.insert(imageFiles.at(i).absoluteFilePath(),tempImage);
+        }
+    }
+    return imageRes;
+}
+
+
+void galleryMiddleWidgets::updateResUi(QMap<QString,QImage> imageRes)
 {
     m_imagesInfoList.clear();
     m_imagesRes.clear();
 
-    // get all image files and user class QImage to get thumbnail
-    m_imagesInfoList = findImgFiles(MUSIC_SEARCH_PATH);
-    QImage tempImage;
-    for(int i = 0;i < m_imagesInfoList.size();i++)
-    {
-        if(tempImage.load(m_imagesInfoList.at(i).absoluteFilePath()))
-        {
-            m_imagesRes.insert(m_imagesInfoList.at(i).absoluteFilePath(),tempImage);
-        }
-    }
+    m_imagesRes = imageRes;
     slot_onImagesResChanged(m_imagesRes);
 }
 

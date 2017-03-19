@@ -2,12 +2,17 @@
 #include <QDesktopWidget>
 #include "singleApplication/qsingleapplication.h"
 #include <mainWindows/global_value.h>
-#include <global_value.h>
-#include <ueventthread.h>
-#include <inotifythread.h>
+#include <QTextCodec>
+
+#include "global_value.h"
+#include "ueventthread.h"
+#include "inotifythread.h"
+
 
 int main(int argc, char *argv[])
 {
+    qputenv("QT_IM_MODULE", QByteArray("qtvirtualkeyboardaaadsadasdsadsadas"));
+
     QSingleApplication app(argc, argv);
 
     ueventThread thread;
@@ -33,10 +38,11 @@ int main(int argc, char *argv[])
 
         mainWindow w;
         app.w=&w;
-
-//        w.setGeometry(100,100,1000,700);
-//        w.show();
+#ifdef DEVICE_EVB
+        w.showMaximized();
+#else
         w.showFullScreen();
+#endif
         return app.exec();
     }
     return 0;

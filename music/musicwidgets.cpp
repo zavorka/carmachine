@@ -10,7 +10,8 @@
 musicWidgets::musicWidgets(QWidget *parent):baseWidget(parent)
 {
     setObjectName("musicWidgets");
-    setStyleSheet("#musicWidgets{border-image: url(:/image/music/music_bg.jpg);}");
+    setStyleSheet("#musicWidgets{border-image: url(:/image/music/music_bg.jpg);}"
+                  "QLabel{color:white;}");
     initLayout();
     initConnection();
     initPlayerAndConnection();

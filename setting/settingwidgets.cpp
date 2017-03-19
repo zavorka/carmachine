@@ -4,8 +4,7 @@
 
 settingWidgets::settingWidgets(QWidget *parent):baseWidget(parent)
 {
-    setObjectName("settingWidgets");
-    setStyleSheet("#settingWidgets{border-image: url(:/image/setting/setting_bg.jpg);}");
+    setStyleSheet("QLabel{color:white;}");
     initLayout();
 }
 

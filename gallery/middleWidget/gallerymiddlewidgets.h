@@ -19,7 +19,8 @@ class galleryMiddleWidgets:public baseWidget
     Q_OBJECT
 public:
     galleryMiddleWidgets(QWidget *parent);
-    void updateRes();
+    QMap<QString,QImage> getImageResFromPath(const QString& path = QString(""));
+    void updateResUi(QMap<QString,QImage> imageRes);
     bool isViewerMode(){return m_stackedMainLyout->currentWidget() == (QWidget*)m_viewerWid;}
     void leaveViewerMode();
 private:

@@ -2,20 +2,19 @@
 #include <global_value.h>
 #include <QVBoxLayout>
 #include <QDesktopWidget>
-
 #include <stdlib.h>
+#include <QFileDialog>
 
 mainWindow::mainWindow(QWidget *parent):baseWindow(parent)
   ,mediaHasUpdate(false)
 {
     // 设置布局只需要设置m_mainwid即可
     //    m_mainwid->setStyleSheet("QLabel{color:white;}");
-
-    setStyleSheet("QLabel{color:white;}");
     initLayout();
     initAnimation();
     initConnection();
     mainwid = this;
+    slot_updateMedia2();
 }
 
 void mainWindow::initLayout()
@@ -84,7 +83,7 @@ void mainWindow::initConnection()
     connect(m_settingwid->m_topWid->m_btnreturn,SIGNAL(clicked(bool)),this,SLOT(slot_returnanimation()));
 
     connect(this,SIGNAL(beginUpdateMediaResource()),this,SLOT(slot_updateMedia1()));
-    connect(this,SIGNAL(beginSearchMedia()),this,SLOT(slot_beginSearchMedia()));
+    connect(this,SIGNAL(updateUiByRes(QFileInfoList,QFileInfoList,QMap<QString,QImage>)),this,SLOT(slot_updateUiByRes(QFileInfoList,QFileInfoList,QMap<QString,QImage>)));
 }
 
 void mainWindow::slot_appQuit()
@@ -155,7 +154,6 @@ void mainWindow::slot_updateMedia1()
 {
     if(!mediaHasUpdate)
     {
-        qDebug()<<"Carmachine: Update media resource.";
         mediaHasUpdate = true;
         QTimer::singleShot(2000,this,SLOT(slot_updateMedia2()));
     }
@@ -163,16 +161,17 @@ void mainWindow::slot_updateMedia1()
 
 void mainWindow::slot_updateMedia2()
 {
+    qDebug()<<"Carmachine: Update media resource.";
     mediaUpdateThread *thread = new mediaUpdateThread(this,this);
     thread->start();
     mediaHasUpdate =false;
 }
 
-void mainWindow::slot_beginSearchMedia()
+void mainWindow::slot_updateUiByRes(QFileInfoList musicFileList,QFileInfoList videoFileList,QMap<QString,QImage> imageRes)
 {
-    m_musicWid->m_middlewid->m_leftWid->m_Swidget0->beginSearchFromPath(MUSIC_SEARCH_PATH);
-    m_videoWid->m_middleWid->m_rightWid->beginSearchFromPath(VIDEO_SEARCH_PATH);
-    m_galleryWid->m_middleWid->updateRes();
+    m_musicWid->m_middlewid->m_leftWid->m_Swidget0->updateResUi(musicFileList);
+    m_videoWid->m_middleWid->m_rightWid->updateResUi(videoFileList);
+    m_galleryWid->m_middleWid->updateResUi(imageRes);
     if(m_videoWid->getPlayer()->currentMedia().canonicalUrl().toString()!="")
     {
         m_videoWid->slot_onCurrentMediaChanged(m_videoWid->getPlayer()->currentMedia());
@@ -236,10 +235,10 @@ void mainWindow::keyPressEvent(QKeyEvent *event)
         QWidget::keyPressEvent(event);
         break;
     case 0:   // when key_power enter
-//        if(m_stackedWid->currentWidget()==m_videoWid){
-//            m_videoWid->setPlayerPause();
-//        }
-//        QTimer::singleShot(100, this, SLOT(slot_standby()));
+        //        if(m_stackedWid->currentWidget()==m_videoWid){
+        //            m_videoWid->setPlayerPause();
+        //        }
+        //        QTimer::singleShot(100, this, SLOT(slot_standby()));
         break;
     default:
         break;
@@ -248,12 +247,15 @@ void mainWindow::keyPressEvent(QKeyEvent *event)
 
 mediaUpdateThread::mediaUpdateThread(QObject *parent,mainWindow *mainWindow):QThread(parent)
 {
-    this->m_mainWindow = mainWindow;
-    qRegisterMetaType<QVector<int> >("QVector<int>");
+    m_mainWindow = mainWindow;
+    qRegisterMetaType<QFileInfoList>("QFileInfoList");
     qRegisterMetaType<QMap<QString,QImage>>("QMap<QString,QImage>");
 }
 
 void mediaUpdateThread::run()
 {
-    emit m_mainWindow->beginSearchMedia();
+    QFileInfoList musicFileList = m_mainWindow->m_musicWid->m_middlewid->m_leftWid->m_Swidget0->findMusicFiles(MUSIC_SEARCH_PATH);
+    QFileInfoList videoFileList = m_mainWindow->m_videoWid->m_middleWid->m_rightWid->findVideoFiles(VIDEO_SEARCH_PATH);
+    QMap<QString,QImage> imageRes = m_mainWindow->m_galleryWid->m_middleWid->getImageResFromPath(MUSIC_SEARCH_PATH);
+    emit m_mainWindow->updateUiByRes(musicFileList,videoFileList,imageRes);
 }

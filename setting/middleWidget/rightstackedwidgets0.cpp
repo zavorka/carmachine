@@ -499,15 +499,11 @@ tabCurrentStatus::tabCurrentStatus(QWidget *parent):baseWidget(parent)
     //lyout8 connect and disconnect button
     QHBoxLayout *lyout8 = new QHBoxLayout;
     connectButton = new QPushButton("Connect",this);
-    connectButton->setStyleSheet("QPushButton{background:rgb(85,92,108)}"
-                                 "QPushButton{color:white}"
-                                 "QPushButton{border-radius:5px}");
+    connectButton->setStyleSheet("QPushButton{color:white}");
     connectButton->setFixedSize(wifi_button_width,wifi_button_height);
 
     disconnectButton = new QPushButton("Disconnect",this);
-    disconnectButton->setStyleSheet("QPushButton{background:rgb(85,92,108)}"
-                                    "QPushButton{color:white}"
-                                    "QPushButton{border-radius:5px}");
+    disconnectButton->setStyleSheet("QPushButton{color:white}");
     disconnectButton->setFixedSize(wifi_button_width,wifi_button_height);
     lyout8->addStretch(0);
     lyout8->addWidget(connectButton);
@@ -544,9 +540,7 @@ tabScanResult::tabScanResult(QWidget *parent):baseWidget(parent)
     // lyout3
     QHBoxLayout *lyout1 = new QHBoxLayout;
     scanButton = new QPushButton("reScan",this);
-    scanButton->setStyleSheet("QPushButton{background:rgb(85,92,108)}"
-                              "QPushButton{color:white}"
-                              "QPushButton{border-radius:5px}");
+    scanButton->setStyleSheet("QPushButton{color:white}");
     scanButton->setFixedSize(wifi_button_width,wifi_button_height);
 
     lyout1->addStretch(0);

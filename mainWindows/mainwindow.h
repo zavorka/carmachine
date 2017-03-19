@@ -27,7 +27,7 @@ private:
     void initLayout();
     void initConnection();
     void initAnimation();
-private:
+public:
     QStackedWidget *m_stackedWid;
     musicWidgets *m_musicWid;
     cameraWidgets *m_cameraWid;
@@ -63,13 +63,13 @@ private slots:
     void slot_closeanimationfinished();
     void slot_standby();
     void slot_updateMedia1();
-    void slot_updateMedia2();
 public slots:
+     void slot_updateMedia2();
     void slot_returnanimation();
-    void slot_beginSearchMedia();
+    void slot_updateUiByRes(QFileInfoList musicFileList,QFileInfoList videoFileList,QMap<QString,QImage> imageRes);
 signals:
     void beginUpdateMediaResource();
-    void beginSearchMedia();
+    void updateUiByRes(QFileInfoList musicFileList,QFileInfoList videoFileList,QMap<QString,QImage> imageRes);
 };
 
 class mediaUpdateThread:public QThread

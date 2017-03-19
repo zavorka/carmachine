@@ -5,11 +5,12 @@
 #include <QDir>
 #include <QTime>
 #include <QFileDialog>
-#include "player/videomediadatabase.h"
-#include "global_value.h"
 #include <QEventLoop>
 #include <QMediaPlayer>
+#include <QDirIterator>
 
+#include "player/videomediadatabase.h"
+#include "global_value.h"
 
 videoMiddleWidgetRight::videoMiddleWidgetRight(QWidget *parent):baseWidget(parent)
 {
@@ -20,9 +21,6 @@ videoMiddleWidgetRight::videoMiddleWidgetRight(QWidget *parent):baseWidget(paren
     m_curPlayingIndex = -1;
     initLayout();
     initConnection();
-    // 初始化Video列表数据
-    //    getLocalListFromDataBase();
-    beginSearchFromPath(VIDEO_SEARCH_PATH);
 }
 
 void videoMiddleWidgetRight::initLayout()
@@ -55,32 +53,49 @@ void videoMiddleWidgetRight::initConnection()
 
 void videoMiddleWidgetRight::setOriginState()
 {
-
-    //    m_localTable->item(m_curPlayingIndex,0)->setTextColor(QColor(255,255,255));
-    //    m_localTable->item(m_curPlayingIndex,1)->setTextColor(QColor(255,255,255));
-    //    m_localTable->item(m_curPlayingIndex,1)->setText("马丹");
-    //    m_curPlayingIndex = -1;
-
+    if(m_curPlayingIndex!=-1)
+    {
+        m_localTable->setRowTextColor(m_curPlayingIndex,QColor(255,255,255));
+        m_localTable->item(m_curPlayingIndex,1)->setText("");
+        m_curPlayingIndex = -1;
+        m_localTable->setCurrentCell(-1,0);
+    }
 }
 
-//void videoMiddleWidgetRight::getLocalListFromDataBase()
-//{
-//    QVector<QStringList> vec= videoMediaDataBase::getVideoInfo();
-//    QStringList listname=vec.at(0);
-//    QStringList listpath=vec.at(1);
-//    for(int i=0;i<listname.count();i++)
-//    {
-//        QString duration = verifyPathAndGetDuration(listname.value(i));
-//        if(duration!=NULL){
-//            insertIntoLocalTable(i,listname.value(i),duration);
-//            m_playList->addToPlayList(listpath.value(i));
-//        }else{
-//            videoMediaDataBase::removeVideo(listname.value(i),listpath.value(i));
-//        }
-//    }
-//}
 
-void videoMiddleWidgetRight::beginSearchFromPath(QString path)
+/**
+ * @brief used to find all video file in path
+ * @param path
+ * @return
+ */
+QFileInfoList videoMiddleWidgetRight::findVideoFiles(const QString& path)
+{
+    QFileInfoList videoFiles;
+
+    QDirIterator it(path,QDir::Files|QDir::Dirs|QDir::NoDotAndDotDot);
+    while (it.hasNext())
+    {
+        QString name = it.next();
+        QFileInfo info(name);
+        if (info.isDir())
+        {
+            videoFiles.append(findVideoFiles(name));
+        }
+        else
+        {
+            if (info.suffix() == "mp4" || info.suffix() == "avi" || info.suffix() == "rm"
+                    ||info.suffix() == "rmvb" || info.suffix() == "wmv" || info.suffix() == "mkv"
+                    ||info.suffix() == "mov" || info.suffix() == "asf")
+            {
+                videoFiles.append(info);
+            }
+        }
+    }
+    return videoFiles;
+}
+
+
+void videoMiddleWidgetRight::updateResUi(QFileInfoList fileList)
 {
     // clear list
     for(int i = m_localTable->rowCount();i > 0;i--)
@@ -89,58 +104,17 @@ void videoMiddleWidgetRight::beginSearchFromPath(QString path)
     }
     m_playList->clearList();
 
-    QStringList filter;
-    filter<<"mp4"<<"avi"<<"rm"<<"rmvb"<<"wmv"<<"mkv";
-    //    QMediaPlayer player;
-    //    QEventLoop lp;
-    QFileInfoList fileList = getFileList(path);
     for(int i=0;i<fileList.size();i++){
         QFileInfo fileInfo = fileList.at(i);
-        for(int j=0;j<filter.size();j++){
-            if(!m_playList->getUrlList().contains(QUrl::fromLocalFile(fileInfo.absoluteFilePath()))&&fileInfo.fileName().endsWith(filter.at(j))){
-                //                player.setMedia(QUrl::fromLocalFile(fileInfo.absoluteFilePath()));
-                //                //prevent the loop dont stop
-                //                QTimer timer;
-                //                connect(&timer,&QTimer::timeout,[&](){
-                //                    lp.quit();
-                //                });
-                //                timer.setSingleShot(true);
-                //                timer.start(2000);
-
-                //                connect(&player,SIGNAL(durationChanged(qint64)),&lp,SLOT(quit()));
-                //                lp.exec();
-                //                qint64 videoTime= player.duration();
-                //                QTime total_time((videoTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
-                //                                 (videoTime % (1000 * 60 * 60)) / (1000 * 60),
-                //                                 (videoTime % (1000 * 60)) / 1000);
-                //                int allMinite = total_time.hour()*60+total_time.minute();
-                //                QString duration = QString::number(allMinite).append(str_videoTime_minite);
-                //                if(videoTime>0)
-                //                {
-                int rowCount = m_localTable->rowCount();
-                insertIntoLocalTable(rowCount,fileInfo.fileName()," ");
-                m_playList->addToPlayList(fileInfo.absoluteFilePath());
-                //                    videoMediaDataBase::addVideo(fileInfo.baseName(),fileInfo.absoluteFilePath(),"..");
-                //                }
-            }
+        if(!m_playList->getUrlList().contains(QUrl::fromLocalFile(fileInfo.absoluteFilePath()))){
+            int rowCount = m_localTable->rowCount();
+            insertIntoLocalTable(rowCount,fileInfo.fileName()," ");
+            m_playList->addToPlayList(fileInfo.absoluteFilePath());
         }
     }
     m_curPlayingIndex = -1;
 }
 
-// 搜索path路径下的所有文件
-QFileInfoList videoMiddleWidgetRight::getFileList(QString path){
-    QDir *dir=new QDir(path);
-    QFileInfoList file_list = dir->entryInfoList(QDir::Files | QDir::Hidden | QDir::NoSymLinks);
-    QFileInfoList folder_list = dir->entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
-
-    for(int i = 0; i != folder_list.size(); i++){
-        QString name = folder_list.at(i).absoluteFilePath();
-        QFileInfoList child_file_list = getFileList(name);
-        file_list.append(child_file_list);
-    }
-    return file_list;
-}
 
 void videoMiddleWidgetRight::insertIntoLocalTable(int row, QString videoName, QString duration)
 {
@@ -188,45 +162,24 @@ void videoMiddleWidgetRight::updatePlayingItemStyle(QMediaContent content)
 
 void videoMiddleWidgetRight::addVideo()
 {
-    static QString  initialName = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
-    QStringList files=QFileDialog::getOpenFileNames(this, tr("Select File"), initialName, tr("*"));
-    if(files.isEmpty())
-        return;
-
-    //    QMediaPlayer player;
-    //    QEventLoop lp;
-    for(int i=0;i<files.count();i++)
+    QFileDialog *dialog = new QFileDialog(mainwid,"selete file");
+    if(dialog->exec()==QFileDialog::Accepted)
     {
-        if(!m_playList->getUrlList().contains(QUrl::fromLocalFile(files.value(i))))
+        QStringList files = dialog->selectedFiles();
+        if(files.isEmpty())
+            return;
+        for(int i=0;i<files.count();i++)
         {
             QFileInfo info(files[i]);
-            QString fileName=info.fileName();
-            QString filePath=files.value(i);
+            if(!m_playList->getUrlList().contains(QUrl::fromLocalFile(files.value(i)))&&info.exists())
+            {
+                QString fileName=info.fileName();
+                QString filePath=files.value(i);
 
-            //            player.setMedia(QUrl::fromLocalFile(filePath));
-            //            //prevent the loop dont stop
-            //            QTimer timer;
-            //            connect(&timer,&QTimer::timeout,[&](){
-            //                lp.quit();
-            //            });
-            //            timer.setSingleShot(true);
-            //            timer.start(2000);
-
-            //            connect(&player,SIGNAL(durationChanged(qint64)),&lp,SLOT(quit()));
-            //            lp.exec();
-            //            qint64 videoTime= player.duration();
-            //            QTime total_time((videoTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
-            //                             (videoTime % (1000 * 60 * 60)) / (1000 * 60),
-            //                             (videoTime % (1000 * 60)) / 1000);
-            //            int allMinite = total_time.hour()*60+total_time.minute();
-            //            QString duration = QString::number(allMinite).append(str_videoTime_minite);
-            //            if(videoTime>0)
-            //            {
-            int rowCount = m_localTable->rowCount();
-            insertIntoLocalTable(rowCount,fileName," ");
-            m_playList->addToPlayList(filePath);
-            //                videoMediaDataBase::addVideo(fileName,filePath,"..");
-            //            }
+                int rowCount = m_localTable->rowCount();
+                insertIntoLocalTable(rowCount,fileName," ");
+                m_playList->addToPlayList(filePath);
+            }
         }
     }
 }

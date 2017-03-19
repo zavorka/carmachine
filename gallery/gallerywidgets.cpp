@@ -1,11 +1,15 @@
 #include "gallerywidgets.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QTextCodec>
+#include <QApplication>
+
 #include "global_value.h"
 
 
 galleryWidgets::galleryWidgets(QWidget *parent,mainWindow *mainWid):baseWidget(parent)
 {
+    setStyleSheet("QLabel{color:white;}");
     m_mainWid = mainWid ;
     initLayout();
     init();

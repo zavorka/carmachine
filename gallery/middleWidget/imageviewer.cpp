@@ -238,14 +238,25 @@ bool ImageViewer::event(QEvent *event)
             QPinchGesture::ChangeFlags changeFlags = pinchGesture->changeFlags();
             if(changeFlags & QPinchGesture::ScaleFactorChanged)
             {
-                if(pinchGesture->totalScaleFactor()>1.7)
+#ifdef DEVICE_EVB
+                if(pinchGesture->totalScaleFactor()>1.2)
                 {
                     ariseScale(1);
                 }
-                else if(pinchGesture->totalScaleFactor()<0.3)
+                else if(pinchGesture->totalScaleFactor()<0.8)
                 {
                     ariseScale(-1);
                 }
+#else
+                if(pinchGesture->totalScaleFactor()>1.6)
+                {
+                    ariseScale(1);
+                }
+                else if(pinchGesture->totalScaleFactor()<0.4)
+                {
+                    ariseScale(-1);
+                }
+#endif
             }
         }
     }

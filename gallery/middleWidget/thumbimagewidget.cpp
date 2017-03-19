@@ -211,6 +211,6 @@ void thumbImageWidget::slot_updateImages()
             emit m_middleWidgets->imagesResChanged(m_imagesRes);
         }
     }else{   // reserch images
-        m_middleWidgets->updateRes();
+        mainwid->slot_updateMedia2();
     }
 }

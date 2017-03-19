@@ -6,7 +6,6 @@
 
 baseWidget::baseWidget(QWidget *parent) : QWidget(parent)
 {
-    setStyleSheet("QTableWidget,QPushButton{background:transparent;}");
     setMouseTracking(true);
 }
 

@@ -19,14 +19,15 @@ class videoMiddleWidgetRight:public baseWidget
 public:
     videoMiddleWidgetRight(QWidget *parent=0);
 
+    void updateResUi(QFileInfoList fileList);
+    QFileInfoList findVideoFiles(const QString& path = QString(""));
+
     QString getCurrentVideoName(){return m_curPlayingVideoName;}
     videoList* getVideoList(){return m_playList;}
     void updatePlayingItemStyle(QMediaContent);
     void addVideo(); // 添加视频文件
     videoLocalListTable *m_localTable;
     void setOriginState();
-
-    void beginSearchFromPath(QString path);
 private:
     listHeader *m_listHeader;
     QStackedWidget *m_stackedWid;
@@ -41,7 +42,6 @@ private:
     void initConnection();
     //    void getLocalListFromDataBase();
 
-    QFileInfoList getFileList(QString path);
     void insertIntoLocalTable(int row,QString videoName,QString duration);
 
 protected:

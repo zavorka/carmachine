@@ -13,15 +13,16 @@ int controler_button_width = 60;
 
 ImageControler::ImageControler(QWidget *parent):QWidget(parent)
 {
-    setFixedHeight(controler_button_width);
+#ifdef DEVICE_EVB
+    setFixedHeight(140);
+#else
+    setFixedHeight(70);
+#endif
     initLayout();
 }
 
 void ImageControler::initLayout()
 {
-//    QVBoxLayout *mainLayout = new QVBoxLayout;
-
-
     // button and it's layout
     m_btnLast = new QPushButton(this);
     m_btnLast->setFixedSize(controler_button_width,controler_button_width);
@@ -78,10 +79,6 @@ void ImageControler::initLayout()
      buttonLayout->addWidget(m_btnNext);
      buttonLayout->addStretch(0);
      buttonLayout->setSpacing(0);
-
-//     mainLayout->addStretch(0);
-//     mainLayout->addLayout(buttonLayout);
-//     mainLayout->addSpacing(30);
 
      setLayout(buttonLayout);
 }

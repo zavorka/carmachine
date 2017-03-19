@@ -25,7 +25,6 @@ void CSwitchButton::setChecked(bool state)
     {
         m_state = state;
         repaint();
-        emit checkStateChanged(m_state);
     }
 }
 

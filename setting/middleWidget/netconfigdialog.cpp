@@ -20,11 +20,9 @@ enum {
 
 netConfigDialog::netConfigDialog(QWidget *parent):QDialog(parent)
 {
-    this->setWindowFlags(Qt::Dialog);
-    setStyleSheet("QLabel{color:black}"
-                  "QPushButton{background:rgb(143,145,152)}"
-                  "QPushButton{color:black}"
-                  "QPushButton{border-radius:5px}");
+    setWindowFlags(Qt::Dialog|Qt::FramelessWindowHint);
+    setStyleSheet("QLabel{color:black}"             
+                  "QPushButton{color:black}");
 
     setupUi(this);
 #ifdef DEVICE_EVB
