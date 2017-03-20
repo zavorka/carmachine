@@ -46,8 +46,8 @@ public:
     QPropertyAnimation *m_upwidopen;
     QPropertyAnimation *m_lowwidopen;
 
-    bool mediaHasUpdate;
 private:
+    bool mediaHasUpdate;
 protected:
     // 解决无边框窗口在最小化之后子控件不刷新的问题
     void showEvent(QShowEvent *e);

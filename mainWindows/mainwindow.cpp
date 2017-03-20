@@ -211,10 +211,13 @@ void mainWindow::resizeEvent(QResizeEvent*)
 void mainWindow::slot_standby()
 {
     system("echo mem > /sys/power/state");
+    isSuspend = true;
 }
+
 
 void mainWindow::keyPressEvent(QKeyEvent *event)
 {
+    qDebug()<<"key value is:"<<event->key();
     switch(event->key())
     {
     // update musicPlayer and videoPlayer's volume by Key
@@ -234,11 +237,11 @@ void mainWindow::keyPressEvent(QKeyEvent *event)
         }
         QWidget::keyPressEvent(event);
         break;
-    case 0:   // when key_power enter
-        //        if(m_stackedWid->currentWidget()==m_videoWid){
-        //            m_videoWid->setPlayerPause();
-        //        }
-        //        QTimer::singleShot(100, this, SLOT(slot_standby()));
+    case Qt::Key_PowerOff:   // when key_power enter
+        if(m_stackedWid->currentWidget()==m_videoWid){
+            m_videoWid->setPlayerPause();
+        }
+        QTimer::singleShot(100, this, SLOT(slot_standby()));
         break;
     default:
         break;
