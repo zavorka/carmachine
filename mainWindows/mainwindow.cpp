@@ -211,7 +211,6 @@ void mainWindow::resizeEvent(QResizeEvent*)
 void mainWindow::slot_standby()
 {
     system("echo mem > /sys/power/state");
-    isSuspend = true;
 }
 
 
