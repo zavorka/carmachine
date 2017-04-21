@@ -61,6 +61,7 @@ void mainWindow::initConnection()
     connect(m_musicWid->m_topwid->m_btnexit,SIGNAL(clicked(bool)),this,SLOT(slot_appQuit()));
     connect(m_cameraWid->m_topWid->m_btnmini,SIGNAL(clicked(bool)),this,SLOT(showMinimized()));
     connect(m_cameraWid->m_topWid->m_btnexit,SIGNAL(clicked(bool)),this,SLOT(slot_appQuit()));
+    connect(m_cameraWid->m_topWid->m_btnreturn,SIGNAL(clicked(bool)),this,SLOT(slot_closeCamera()));
     connect(m_videoWid->m_topWid->m_btnmini,SIGNAL(clicked(bool)),this,SLOT(showMinimized()));
     connect(m_videoWid->m_topWid->m_btnexit,SIGNAL(clicked(bool)),this,SLOT(slot_appQuit()));
     connect(m_galleryWid->m_topWid->m_btnmini,SIGNAL(clicked(bool)),this,SLOT(showMinimized()));
@@ -133,9 +134,11 @@ void mainWindow::slot_showGallery()
 
 void mainWindow::slot_showCamera()
 {
+    qDebug() << "slot_showCamera";
     m_stackedWid->setCurrentIndex(4);
     m_upwidclose->start();
     m_lowwidclose->start();
+    m_cameraWid->openCamera();
 }
 
 void mainWindow::slot_returnanimation()
@@ -213,6 +216,12 @@ void mainWindow::slot_standby()
     system("echo mem > /sys/power/state");
 }
 
+
+void mainWindow::closeCameraApp()
+{
+    qDebug() << "closeCameraApp";
+    m_cameraWid->closeCamera();
+}
 
 void mainWindow::keyPressEvent(QKeyEvent *event)
 {

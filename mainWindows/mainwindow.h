@@ -27,6 +27,7 @@ private:
     void initLayout();
     void initConnection();
     void initAnimation();
+	void closeCameraApp();
 public:
     QStackedWidget *m_stackedWid;
     musicWidgets *m_musicWid;
@@ -60,6 +61,7 @@ private slots:
     void slot_showVideo();
     void slot_showGallery();
     void slot_showCamera();
+	void slot_closeCamera() {closeCameraApp();};
     void slot_closeanimationfinished();
     void slot_standby();
     void slot_updateMedia1();

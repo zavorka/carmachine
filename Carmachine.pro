@@ -20,6 +20,17 @@ DEFINES += DEVICE_EVB
 
 CONFIG	+= qt warn_on release
 
+CONFIG += link_pkgconfig
+GST_VERSION = 1.0
+
+PKGCONFIG += \
+    gstreamer-$$GST_VERSION \
+    gstreamer-base-$$GST_VERSION \
+    gstreamer-audio-$$GST_VERSION \
+    gstreamer-video-$$GST_VERSION \
+    gstreamer-pbutils-$$GST_VERSION
+
+
 win32 {
   LIBS += -lws2_32 -static
   DEFINES += CONFIG_NATIVE_WINDOWS CONFIG_CTRL_IFACE_NAMED_PIPE
