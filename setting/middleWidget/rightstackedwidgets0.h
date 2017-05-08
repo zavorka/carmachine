@@ -40,6 +40,10 @@ public:
     tabCurrentStatus *m_tabCurrentStatus;
     tabScanResult *m_tabScanResult;
 //    tabApHotspot *m_tabHotspot;
+	// about ap
+	switchWidget *mApSwitch;
+    QLineEdit *mHostApName;
+    QLineEdit *mHostApPassWord;
 
     wpaManager *m_netManager; // 网络管理类
 public:
@@ -58,6 +62,9 @@ public slots:
     void slot_showItemDetail(int,int);
     void slot_onToggled(bool isChecked);
     void slot_checkLanConnection();
+	// about ap
+	void onAPToggled(bool isChecked);
+    void setAPUnchecked();
 signals:
 
 };
@@ -67,7 +74,7 @@ signals:
 class switchWidget:public baseWidget
 {
 public:
-    switchWidget(QWidget *parent);
+    switchWidget(QWidget *parent,QString text);
     CSwitchButton* getSwitchButton(){return m_btnSwitch;}
 private:
     QLabel *m_lblState;

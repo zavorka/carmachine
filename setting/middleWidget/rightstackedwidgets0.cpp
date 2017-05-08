@@ -47,141 +47,6 @@ static const char WPA_SUPPLICANT_CONF_DIR[]           = "/tmp/wpa_supplicant.con
 static const char HOSTAPD_CONF_DIR[]	=	"/tmp/hostapd.conf";
 int is_supplicant_running();
 
-// about wifi
-int creat_supplicant_file()
-{
-    FILE* fp;
-    fp = fopen(WPA_SUPPLICANT_CONF_DIR, "wt+");
-
-    if (fp != 0) {
-        fputs("ctrl_interface=/var/run/wpa_supplicant\n", fp);
-        fputs("ap_scan=1\n", fp);
-        fclose(fp);
-        return 0;
-    }
-    return -1;
-}
-
-int creat_hostapd_file(const char* name, const char* password) {
-    FILE* fp;
-    fp = fopen(HOSTAPD_CONF_DIR, "wt+");
-
-    if (fp != 0) {
-        fputs("interface=wlan0\n", fp);
-        fputs("driver=nl80211\n", fp);
-        fputs("ssid=", fp);
-        fputs(name, fp);
-        fputs("\n", fp);
-        fputs("channel=6\n", fp);
-        fputs("hw_mode=g\n", fp);
-        fputs("ieee80211n=1\n", fp);
-        fputs("ht_capab=[SHORT-GI-20]\n", fp);
-        fputs("ignore_broadcast_ssid=0\n", fp);
-        fputs("auth_algs=1\n", fp);
-        fputs("wpa=3\n", fp);
-        fputs("wpa_passphrase=", fp);
-        fputs(password, fp);
-        fputs("\n", fp);
-        fputs("wpa_key_mgmt=WPA-PSK\n", fp);
-        fputs("wpa_pairwise=TKIP\n", fp);
-        fputs("rsn_pairwise=CCMP", fp);
-
-        fclose(fp);
-        return 0;
-    }
-    return -1;
-}
-
-
-rightStackedWidgets0::rightStackedWidgets0(QWidget *parent):baseWidget(parent)
-{
-    setObjectName("rightStackedWidgets0");
-    setStyleSheet("#rightStackedWidgets0{background:rgb(33,36,43)}");
-    initLayout();
-    initData();
-    initConnection();  // 连接信号与槽
-}
-
-void rightStackedWidgets0::initData()
-{
-    wifiWid = this;
-    m_netManager = wpaManager::getInstance(this);
-    m_wifiSwitch->getSwitchButton()->setChecked(is_supplicant_running());
-    if(is_supplicant_running())
-    {
-        m_netManager->openCtrlConnection("wlan0");
-    }
-}
-
-void rightStackedWidgets0::initLayout()
-{
-    // 第1行布局 开关
-    m_wifiSwitch = new switchWidget(this);
-
-
-    // 第2部分布局 TabWidget 包含2部分内容:Current status、WifiList
-    m_tab = new QTabWidget(this);
-    m_tab->setStyleSheet("background:rgb(33,36,43)");
-
-    m_tabCurrentStatus = new tabCurrentStatus(this);
-    m_tabScanResult = new tabScanResult(this);
-    //    m_tabHotspot = new tabApHotspot(this);
-    m_tab->addTab(m_tabScanResult,QString("Scan Result"));
-    m_tab->addTab(m_tabCurrentStatus,QString("Current Status"));
-    //    m_tab->addTab(m_tabHotspot,QString("HotSpot"));
-    m_tab->setCurrentIndex(0);
-
-
-    QVBoxLayout *vmainlyout = new QVBoxLayout;
-    vmainlyout->addSpacing(30);
-    vmainlyout->addWidget(m_wifiSwitch);
-    vmainlyout->addSpacing(20);
-    vmainlyout->addWidget(m_tab);
-    vmainlyout->addStretch(0);
-    vmainlyout->setContentsMargins(0,0,0,0);
-    vmainlyout->setSpacing(12);
-
-    // 空间太大显示不便，加一个横向的布局
-    QHBoxLayout *hmainlyout = new QHBoxLayout;
-    hmainlyout->addStretch(1);
-    hmainlyout->addLayout(vmainlyout,4);
-    hmainlyout->addStretch(1);
-    setLayout(hmainlyout);
-}
-
-void rightStackedWidgets0::initConnection()
-{
-    if (access(WPA_SUPPLICANT_CONF_DIR, F_OK) < 0) {
-        creat_supplicant_file();
-    }
-    creat_hostapd_file("RK_HOSTAPD_TEST", "12345678");
-
-    //    connect(m_adapterSeletor,SIGNAL(activated(const QString&)),m_netManager,SLOT(selectAdapter(const QString&)));
-
-    connect(m_tabCurrentStatus->connectButton,SIGNAL(clicked(bool)),m_netManager,SLOT(connectB()));
-    connect(m_tabCurrentStatus->disconnectButton,SIGNAL(clicked(bool)),m_netManager,SLOT(disconnectB()));
-    connect(m_tabScanResult->scanButton,SIGNAL(clicked(bool)),m_netManager,SLOT(scan()));
-
-    connect(m_tabScanResult->m_table,SIGNAL(cellClicked(int,int)),this,SLOT(slot_showItemDetail(int,int)));
-    connect(m_wifiSwitch->getSwitchButton(),SIGNAL(checkStateChanged(bool)),this,SLOT(slot_onToggled(bool)));
-
-    m_workTimer = new QTimer(this);
-    m_workTimer->setSingleShot(false);
-#ifdef DEVICE_EVB
-    connect(m_workTimer, SIGNAL(timeout()), this, SLOT(slot_checkLanConnection()));
-    m_workTimer->start(5000);
-#endif
-}
-
-void rightStackedWidgets0::slot_showItemDetail(int row,int)
-{
-    netConfigDialog *dialog = new netConfigDialog(this);
-    if (dialog == NULL)
-        return;
-    dialog->paramsFromScanResults(m_tabScanResult->m_netWorks[row]);
-    dialog->exec();
-}
-
 const bool console_run(const char *cmdline) {
     DEBUG_INFO("cmdline = %s\n",cmdline);
 
@@ -228,6 +93,79 @@ int get_pid(char *Name) {
     return pid;
 }
 
+// about wifi
+int creat_supplicant_file()
+{
+    FILE* fp;
+    fp = fopen(WPA_SUPPLICANT_CONF_DIR, "wt+");
+
+    if (fp != 0) {
+        fputs("ctrl_interface=/var/run/wpa_supplicant\n", fp);
+        fputs("ap_scan=1\n", fp);
+        fclose(fp);
+        return 0;
+    }
+    return -1;
+}
+
+int creat_hostapd_file(const char* name, const char* password) {
+    FILE* fp;
+    fp = fopen(HOSTAPD_CONF_DIR, "wt+");
+
+    if (fp != 0) {
+        fputs("interface=wlan0\n", fp);
+        fputs("driver=nl80211\n", fp);
+        fputs("ssid=", fp);
+        fputs(name, fp);
+        fputs("\n", fp);
+        fputs("channel=6\n", fp);
+        fputs("hw_mode=g\n", fp);
+        fputs("ieee80211n=1\n", fp);
+        fputs("ht_capab=[SHORT-GI-20]\n", fp);
+        fputs("ignore_broadcast_ssid=0\n", fp);
+        fputs("auth_algs=1\n", fp);
+        fputs("wpa=3\n", fp);
+        fputs("wpa_passphrase=", fp);
+        fputs(password, fp);
+        fputs("\n", fp);
+        fputs("wpa_key_mgmt=WPA-PSK\n", fp);
+        fputs("wpa_pairwise=TKIP\n", fp);
+        fputs("rsn_pairwise=CCMP", fp);
+
+        fclose(fp);
+        return 0;
+    }
+    return -1;
+}
+
+int is_hostapd_running()
+{
+    int ret;
+
+    ret = get_pid("hostapd");
+
+    return ret;
+}
+
+int wifi_start_hostapd()
+{
+    if (is_hostapd_running()) {
+        return 0;
+    }
+    console_run("ifconfig wlan0 up");
+    console_run("ifconfig wlan0 192.168.100.1 netmask 255.255.255.0");
+    console_run("echo 1 > /proc/sys/net/ipv4/ip_forward");
+    console_run("iptables --flush");
+    console_run("iptables --table nat --flush");
+    console_run("iptables --delete-chain");
+    console_run("iptables --table nat --delete-chain");
+    console_run("iptables --table nat --append POSTROUTING --out-interface eth0 -j MASQUERADE");
+    console_run("iptables --append FORWARD --in-interface wlan0 -j ACCEPT");
+    console_run("/usr/sbin/hostapd /tmp/hostapd.conf -B");
+
+    return 0;
+}
+
 int is_supplicant_running()
 {
     int ret;
@@ -267,51 +205,156 @@ int wifi_stop_supplicant()
 
 }
 
-int is_hostapd_running()
-{
-    int ret;
-
-    ret = get_pid("hostapd");
-
-    return ret;
-}
-
-int wifi_start_hostapd()
-{
-    if (is_hostapd_running()) {
-        return 0;
-    }
-    console_run("ifconfig wlan0 up");
-    console_run("ifconfig wlan0 192.168.100.1 netmask 255.255.255.0");
-    console_run("echo 1 > /proc/sys/net/ipv4/ip_forward");
-    console_run("iptables --flush");
-    console_run("iptables --table nat --flush");
-    console_run("iptables --delete-chain");
-    console_run("iptables --table nat --delete-chain");
-    console_run("iptables --table nat --append POSTROUTING --out-interface eth0 -j MASQUERADE");
-    console_run("iptables --append FORWARD --in-interface wlan0 -j ACCEPT");
-    console_run("/usr/sbin/hostapd /tmp/hostapd.conf -B");
-
-    return 0;
-}
 
 int wifi_stop_hostapd()
 {
-    //    int pid;
-    //    char *cmd = NULL;
+    int pid;
+    char *cmd = NULL;
 
-    //    if (!is_hostapd_running()) {
-    //            return 0;
-    //    }
-    //    pid = get_pid("hostapd");
-    //    asprintf(&cmd, "kill %d", pid);
-    //    console_run(cmd);
-    //    free(cmd);
+    if (!is_hostapd_running()) {
+        return 0;
+    }
+    pid = get_pid("hostapd");
+    asprintf(&cmd, "kill %d", pid);
+    console_run(cmd);
+    free(cmd);
 
-    //    console_run("echo 0 > /proc/sys/net/ipv4/ip_forward");
-    //    console_run("ifconfig wlan0 down");
+    console_run("echo 0 > /proc/sys/net/ipv4/ip_forward");
+    console_run("ifconfig wlan0 down");
     return 0;
 }
+
+
+rightStackedWidgets0::rightStackedWidgets0(QWidget *parent):baseWidget(parent)
+{
+    setObjectName("rightStackedWidgets0");
+    setStyleSheet("#rightStackedWidgets0{background:rgb(33,36,43)}");
+    initLayout();
+    initData();
+    initConnection();  // 连接信号与槽
+}
+
+void rightStackedWidgets0::initData()
+{
+    wifiWid = this;
+    m_netManager = wpaManager::getInstance(this);
+    m_wifiSwitch->getSwitchButton()->setChecked(is_supplicant_running());
+	mApSwitch->getSwitchButton()->setChecked(is_hostapd_running());
+    if(is_supplicant_running())
+    {
+        m_netManager->openCtrlConnection("wlan0");
+    }
+}
+
+void rightStackedWidgets0::initLayout()
+{
+    // 第1行布局 开关
+    m_wifiSwitch = new switchWidget(this,"Open Wifi");
+
+
+    // 第2部分布局 TabWidget 包含2部分内容:Current status、WifiList
+    m_tab = new QTabWidget(this);
+    m_tab->setStyleSheet("background:rgb(33,36,43)");
+
+    m_tabCurrentStatus = new tabCurrentStatus(this);
+    m_tabScanResult = new tabScanResult(this);
+    //    m_tabHotspot = new tabApHotspot(this);
+    m_tab->addTab(m_tabScanResult,QString("Scan Result"));
+    m_tab->addTab(m_tabCurrentStatus,QString("Current Status"));
+    //    m_tab->addTab(m_tabHotspot,QString("HotSpot"));
+    m_tab->setCurrentIndex(0);
+	
+	// 第3部分布局 AP
+	mApSwitch = new switchWidget(this,"Start HostAp");
+
+    QFrame *bottomLine = new QFrame(this);
+    bottomLine->setFixedHeight(2);
+    bottomLine->setStyleSheet("QFrame{border:1px solid rgb(100,100,100,255);}");
+    bottomLine->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+
+    // Host AP name layout
+    QLabel *apNameLabel = new QLabel(this);
+    apNameLabel->setText("HostAp Name:");
+
+    mHostApName = new QLineEdit("RK_HOSTAP_TEST",this);
+    mHostApName->setFixedSize(wifi_button_width + 200,wifi_button_height);
+    mHostApName->setAlignment(Qt::AlignRight);
+
+    QHBoxLayout *apNameLayout = new QHBoxLayout;
+    apNameLayout->addWidget(apNameLabel);
+    apNameLayout->addWidget(mHostApName);
+
+    // Host AP password layout
+    QLabel *apPasswordLabel = new QLabel(this);
+    apPasswordLabel->setText("HostAp password:");
+
+    mHostApPassWord = new QLineEdit("987654321",this);
+    mHostApPassWord->setFixedSize(wifi_button_width + 200,wifi_button_height);
+    mHostApPassWord->setAlignment(Qt::AlignRight);
+
+    QHBoxLayout *apPasswordLayout = new QHBoxLayout;
+    apPasswordLayout->addWidget(apPasswordLabel);
+    apPasswordLayout->addWidget(mHostApPassWord);
+
+
+    QVBoxLayout *vmainlyout = new QVBoxLayout;
+    vmainlyout->addSpacing(20);
+    vmainlyout->addWidget(m_wifiSwitch);
+    vmainlyout->addWidget(m_tab);
+	// ap
+	vmainlyout->addWidget(bottomLine);
+    vmainlyout->addLayout(apNameLayout);
+    vmainlyout->addLayout(apPasswordLayout);
+	vmainlyout->addWidget(mApSwitch);
+	
+	vmainlyout->addSpacing(50);
+    vmainlyout->addStretch(0);
+    vmainlyout->setContentsMargins(0,0,0,0);
+    vmainlyout->setSpacing(12);
+
+    // 空间太大显示不便，加一个横向的布局
+    QHBoxLayout *hmainlyout = new QHBoxLayout;
+    hmainlyout->addStretch(1);
+    hmainlyout->addLayout(vmainlyout,4);
+    hmainlyout->addStretch(1);
+    setLayout(hmainlyout);
+}
+
+void rightStackedWidgets0::initConnection()
+{
+    if (access(WPA_SUPPLICANT_CONF_DIR, F_OK) < 0) {
+        creat_supplicant_file();
+    }
+    creat_hostapd_file("RK_HOSTAPD_TEST", "12345678");
+
+    //    connect(m_adapterSeletor,SIGNAL(activated(const QString&)),m_netManager,SLOT(selectAdapter(const QString&)));
+
+    connect(m_tabCurrentStatus->connectButton,SIGNAL(clicked(bool)),m_netManager,SLOT(connectB()));
+    connect(m_tabCurrentStatus->disconnectButton,SIGNAL(clicked(bool)),m_netManager,SLOT(disconnectB()));
+    connect(m_tabScanResult->scanButton,SIGNAL(clicked(bool)),m_netManager,SLOT(scan()));
+
+    connect(m_tabScanResult->m_table,SIGNAL(cellClicked(int,int)),this,SLOT(slot_showItemDetail(int,int)));
+    connect(m_wifiSwitch->getSwitchButton(),SIGNAL(checkStateChanged(bool)),this,SLOT(slot_onToggled(bool)));
+	
+	connect(mApSwitch->getSwitchButton(),SIGNAL(checkStateChanged(bool)),this,SLOT(onAPToggled(bool)));
+
+    m_workTimer = new QTimer(this);
+    m_workTimer->setSingleShot(false);
+#ifdef DEVICE_EVB
+    connect(m_workTimer, SIGNAL(timeout()), this, SLOT(slot_checkLanConnection()));
+    m_workTimer->start(5000);
+#endif
+}
+
+void rightStackedWidgets0::slot_showItemDetail(int row,int)
+{
+    netConfigDialog *dialog = new netConfigDialog(this);
+    if (dialog == NULL)
+        return;
+    dialog->paramsFromScanResults(m_tabScanResult->m_netWorks[row]);
+    dialog->exec();
+}
+
 
 void rightStackedWidgets0::wifiStationOn()
 {
@@ -350,6 +393,25 @@ void rightStackedWidgets0::slot_onToggled(bool isChecked)
         DEBUG_INFO("=======wifiStationOff========\n");
         wifiStationOff();
     }
+}
+
+void rightStackedWidgets0::onAPToggled(bool isChecked){
+    if(isChecked){
+        if(mHostApName->text()== NULL || mHostApPassWord->text().size() < 8){
+            QMessageBox::warning(this,"Warning","name can't be null,and password can't be less 8!",QMessageBox::Ok);
+            QTimer::singleShot(1,this,SLOT(setAPUnchecked()));
+        }else{
+			creat_hostapd_file(mHostApName->text().toLatin1().data(),mHostApPassWord->text().toLatin1().data());
+			wifi_start_hostapd();
+		}
+    }else{
+        wifi_stop_hostapd();
+    }
+}
+
+void rightStackedWidgets0::setAPUnchecked()
+{
+    mApSwitch->getSwitchButton()->setChecked(false);
 }
 
 void lanStateChanhe(bool state){
@@ -401,12 +463,13 @@ void rightStackedWidgets0::slot_checkLanConnection()
     }
 
 }
-switchWidget::switchWidget(QWidget *parent):baseWidget(parent)
+switchWidget::switchWidget(QWidget *parent,QString text):baseWidget(parent)
 {
+	setFixedHeight(wifi_switch_height);
     QHBoxLayout *mainlyout = new QHBoxLayout;
 
     m_lblState = new QLabel(this);
-    m_lblState->setText("Open Wlan");
+    m_lblState->setText(text);
 
     m_btnSwitch = new CSwitchButton(this);
     m_btnSwitch->setFixedSize(wifi_switch_width,wifi_switch_height);
