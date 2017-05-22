@@ -65,6 +65,7 @@ public slots:
 	// about ap
 	void onAPToggled(bool isChecked);
     void setAPUnchecked();
+	void setWifiUnchecked();
 signals:
 
 };

@@ -17,6 +17,7 @@
 #include <QThread>
 #include "netconfigdialog.h"
 #include "global_value.h"
+#include <cmessagebox.h>
 
 #ifdef DEVICE_EVB
 int wifi_button_width = 145;
@@ -188,21 +189,20 @@ int wifi_start_supplicant()
 
 int wifi_stop_supplicant()
 {
-    //    int pid;
-    //    char *cmd = NULL;
+    int pid;
+    char *cmd = NULL;
 
-    //    /* Check whether supplicant already stopped */
-    //    if (!is_supplicant_running()) {
-    //        return 0;
-    //   }
+    /* Check whether supplicant already stopped */
+    if (!is_supplicant_running()) {
+          return 0;
+    }
 
-    //    pid = get_pid("wpa_supplicant");
-    //    asprintf(&cmd, "kill %d", pid);
-    //    console_run(cmd);
-    //    free(cmd);
+    pid = get_pid("wpa_supplicant");
+    asprintf(&cmd, "kill %d", pid);
+    console_run(cmd);
+    free(cmd);
 
-    //        return 0;
-
+    return 0;
 }
 
 
@@ -384,11 +384,17 @@ void rightStackedWidgets0::wifiAccessPointOff()
 {
     wifi_stop_hostapd();
 }
+
 void rightStackedWidgets0::slot_onToggled(bool isChecked)
 {
     if(isChecked){
-        DEBUG_INFO("=======wifiStationOn========\n");
-        wifiStationOn();
+		if(is_hostapd_running()){
+			CMessageBox::showCMessageBox(this,"Close hostap first","Confirm","Cancel");
+			QTimer::singleShot(10,this,SLOT(setWifiUnchecked()));
+		}else{
+			DEBUG_INFO("=======wifiStationOn========\n");
+			wifiStationOn();
+		}
     }else{
         DEBUG_INFO("=======wifiStationOff========\n");
         wifiStationOff();
@@ -399,8 +405,11 @@ void rightStackedWidgets0::onAPToggled(bool isChecked){
     if(isChecked){
         if(mHostApName->text()== NULL || mHostApPassWord->text().size() < 8){
             QMessageBox::warning(this,"Warning","name can't be null,and password can't be less 8!",QMessageBox::Ok);
-            QTimer::singleShot(1,this,SLOT(setAPUnchecked()));
-        }else{
+			QTimer::singleShot(10,this,SLOT(setAPUnchecked()));
+        }else if(is_supplicant_running()){
+			CMessageBox::showCMessageBox(this,"Close wifi first.","Confirm","Cancel");
+			QTimer::singleShot(10,this,SLOT(setAPUnchecked()));
+		}else {
 			creat_hostapd_file(mHostApName->text().toLatin1().data(),mHostApPassWord->text().toLatin1().data());
 			wifi_start_hostapd();
 		}
@@ -413,6 +422,12 @@ void rightStackedWidgets0::setAPUnchecked()
 {
     mApSwitch->getSwitchButton()->setChecked(false);
 }
+
+void rightStackedWidgets0::setWifiUnchecked()
+{
+    m_wifiSwitch->getSwitchButton()->setChecked(false);
+}
+
 
 void lanStateChanhe(bool state){
     //need to check wifi state
