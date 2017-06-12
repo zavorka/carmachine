@@ -15,6 +15,8 @@
 
 #include <QPropertyAnimation>
 #include <QStackedLayout>
+#include <QProcess>
+#include "cwaitdialog.h"
 
 class galleryWidgets;
 
@@ -27,7 +29,7 @@ private:
     void initLayout();
     void initConnection();
     void initAnimation();
-	void closeCameraApp();
+    void closeCameraApp();
 public:
     QStackedWidget *m_stackedWid;
     musicWidgets *m_musicWid;
@@ -47,7 +49,8 @@ public:
     QPropertyAnimation *m_upwidopen;
     QPropertyAnimation *m_lowwidopen;
 
-private:
+    CWaitDialog *m_waitDialog;
+
     bool mediaHasUpdate;
 protected:
     // 解决无边框窗口在最小化之后子控件不刷新的问题
@@ -56,15 +59,20 @@ protected:
     void keyPressEvent(QKeyEvent *event);
 private slots:
     void slot_appQuit();
+
+    void slot_showEasyConnect();
     void slot_showSetting();
     void slot_showMusic();
     void slot_showVideo();
     void slot_showGallery();
     void slot_showCamera();
-	void slot_closeCamera() {closeCameraApp();};
+    void slot_closeCamera() {closeCameraApp();};
     void slot_closeanimationfinished();
     void slot_standby();
     void slot_updateMedia1();
+
+    void slot_beginEasyConnect();
+    void slot_resetSiganls();
 public slots:
      void slot_updateMedia2();
     void slot_returnanimation();
@@ -83,7 +91,6 @@ private:
 protected:
     void run();
 };
-
 
 
 #endif // MAINWINDOW_H

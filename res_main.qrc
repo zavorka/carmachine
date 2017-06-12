@@ -21,5 +21,11 @@
         <file>image/main/icon_setting.png</file>
         <file>image/main/icon_gallery.png</file>
         <file>image/main/return_big.png</file>
+        <file>image/main/hour_pointer.png</file>
+        <file>image/main/icon_easy_connect.png</file>
+        <file>image/main/icon_radio.png</file>
+        <file>image/main/mini_pointer.png</file>
+        <file>image/main/sec_pointer.png</file>
+        <file>image/main/loading.gif</file>
     </qresource>
 </RCC>

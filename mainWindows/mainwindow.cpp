@@ -4,6 +4,9 @@
 #include <QDesktopWidget>
 #include <stdlib.h>
 #include <QFileDialog>
+#include <QProcess>
+
+#include "qprogressindicator.h"
 
 mainWindow::mainWindow(QWidget *parent):baseWindow(parent)
   ,mediaHasUpdate(false)
@@ -48,6 +51,9 @@ void mainWindow::initLayout()
     setLayout(m_mainlyout);
 
     m_mainlyout->setCurrentWidget(m_mainwid);
+
+    m_waitDialog = new CWaitDialog("EasyConnect Start",this);
+    m_waitDialog->hide();
 }
 
 void mainWindow::initConnection()
@@ -66,12 +72,14 @@ void mainWindow::initConnection()
     connect(m_videoWid->m_topWid->m_btnexit,SIGNAL(clicked(bool)),this,SLOT(slot_appQuit()));
     connect(m_galleryWid->m_topWid->m_btnmini,SIGNAL(clicked(bool)),this,SLOT(showMinimized()));
     connect(m_galleryWid->m_topWid->m_btnexit,SIGNAL(clicked(bool)),this,SLOT(slot_appQuit()));
-
-    connect(m_mainwidlow->m_btnSetUp,SIGNAL(clicked()),this,SLOT(slot_showSetting()));
-    connect(m_mainwidlow->m_btnMusic,SIGNAL(clicked()),this,SLOT(slot_showMusic()));
-    connect(m_mainwidlow->m_btnVideo,SIGNAL(clicked()),this,SLOT(slot_showVideo()));
-    connect(m_mainwidlow->m_btnGallery,SIGNAL(clicked()),this,SLOT(slot_showGallery()));
-    connect(m_mainwidlow->m_btnCamera,SIGNAL(clicked()),this,SLOT(slot_showCamera()));
+#ifndef DEVICE_EVB
+    connect(m_mainwidlow->m_btnEasyConnect,SIGNAL(clicked(bool)),this,SLOT(slot_showEasyConnect()));
+#endif
+    connect(m_mainwidlow->m_btnSetUp,SIGNAL(clicked(bool)),this,SLOT(slot_showSetting()));
+    connect(m_mainwidlow->m_btnMusic,SIGNAL(clicked(bool)),this,SLOT(slot_showMusic()));
+    connect(m_mainwidlow->m_btnVideo,SIGNAL(clicked(bool)),this,SLOT(slot_showVideo()));
+    connect(m_mainwidlow->m_btnGallery,SIGNAL(clicked(bool)),this,SLOT(slot_showGallery()));
+    connect(m_mainwidlow->m_btnCamera,SIGNAL(clicked(bool)),this,SLOT(slot_showCamera()));
 
     connect(m_upwidclose,SIGNAL(finished()),this,SLOT(slot_closeanimationfinished()));
     connect(m_lowwidclose,SIGNAL(finished()),this,SLOT(slot_closeanimationfinished()));
@@ -101,6 +109,42 @@ void mainWindow::initAnimation()
     m_lowwidclose=new QPropertyAnimation(m_mainwidlow,"pos");
     m_upwidopen=new QPropertyAnimation(m_mainwidup,"pos");
     m_lowwidopen=new QPropertyAnimation(m_mainwidlow,"pos");
+}
+
+
+void mainWindow::slot_showEasyConnect()
+{  
+    qDebug()<<"Easy Connect begin.";
+    m_waitDialog->show();
+    QTimer::singleShot(10,this,SLOT(slot_beginEasyConnect()));
+}
+
+void mainWindow::slot_beginEasyConnect()
+{
+    m_mainwidlow->m_btnEasyConnect->blockSignals(true);
+    m_mainwidlow->m_btnSetUp->blockSignals(true);
+    m_mainwidlow->m_btnMusic->blockSignals(true);
+    m_mainwidlow->m_btnVideo->blockSignals(true);
+    m_mainwidlow->m_btnGallery->blockSignals(true);
+    m_mainwidlow->m_btnCamera->blockSignals(true);
+    QProcess *process = new QProcess(this);
+    process->execute("/usr/bin/EasyConnect/EasyConnected.RXW01.Linux -platform EGLFS");
+//    process->execute("./mnt/EasyConnect/run.sh");
+
+    m_waitDialog->hide();
+    qDebug()<<"Easy Connect end";
+
+    QTimer::singleShot(1000,this,SLOT(slot_resetSiganls()));
+}
+
+void mainWindow::slot_resetSiganls()
+{
+    m_mainwidlow->m_btnEasyConnect->blockSignals(false);
+    m_mainwidlow->m_btnSetUp->blockSignals(false);
+    m_mainwidlow->m_btnMusic->blockSignals(false);
+    m_mainwidlow->m_btnVideo->blockSignals(false);
+    m_mainwidlow->m_btnGallery->blockSignals(false);
+    m_mainwidlow->m_btnCamera->blockSignals(false);
 }
 
 void mainWindow::slot_showSetting()

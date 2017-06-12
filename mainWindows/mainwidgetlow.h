@@ -8,7 +8,10 @@ class mainWidgetLow:public baseWidget
 {
 public:
     mainWidgetLow(QWidget *parent = 0);
-    // five guide button
+    //  guide button
+#ifndef DEVICE_EVB
+     guideButton *m_btnEasyConnect; // mobile connect
+#endif
     guideButton *m_btnSetUp;
     guideButton *m_btnMusic;
     guideButton *m_btnVideo;
