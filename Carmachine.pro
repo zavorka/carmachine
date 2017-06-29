@@ -51,6 +51,13 @@ win32 {
   SOURCES += setting/wpa_supplicant/src/utils/os_unix.c
 }
 
+DEFINES += HAVE_GST_PHOTOGRAPHY
+LIBS += -lgstphotography-$$GST_VERSION
+DEFINES += GST_USE_UNSTABLE_API #prevents warnings because of unstable photography API
+
+DEFINES += HAVE_GST_ENCODING_PROFILES
+
+DEFINES += USE_V4L
 
 INCLUDEPATH +=$$PWD mainWindows
 include(mainWindows/mainWindows.pri)

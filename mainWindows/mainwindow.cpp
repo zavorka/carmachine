@@ -138,7 +138,7 @@ void mainWindow::slot_showCamera()
     m_stackedWid->setCurrentIndex(4);
     m_upwidclose->start();
     m_lowwidclose->start();
-    m_cameraWid->openCamera();
+    //m_cameraWid->openCamera();
 }
 
 void mainWindow::slot_returnanimation()

@@ -32,3 +32,19 @@ void baseWidget::mouseReleaseEvent(QMouseEvent *e)
 {
     QWidget::mouseReleaseEvent(e);
 }
+
+void baseWidget::showEvent(QShowEvent *event) {
+    QWidget::showEvent(event);
+
+}
+void baseWidget::hideEvent(QHideEvent *event) {
+    QWidget::hideEvent(event);
+}
+
+void baseWidget::enterEvent(QEvent *event) {
+    QWidget::enterEvent(event);
+}
+
+void baseWidget::leaveEvent(QEvent *event) {
+    QWidget::leaveEvent(event);
+}
