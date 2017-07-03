@@ -11,7 +11,9 @@
 mainWindow::mainWindow(QWidget *parent):baseWindow(parent)
   ,mediaHasUpdate(false)
 {
-    // 设置布局只需要设置m_mainwid即可
+    setAttribute(Qt::WA_TranslucentBackground, true);
+    setWindowFlags(Qt::FramelessWindowHint);
+
     //    m_mainwid->setStyleSheet("QLabel{color:white;}");
     initLayout();
     initAnimation();
@@ -74,6 +76,7 @@ void mainWindow::initConnection()
     connect(m_galleryWid->m_topWid->m_btnexit,SIGNAL(clicked(bool)),this,SLOT(slot_appQuit()));
 #ifndef DEVICE_EVB
     connect(m_mainwidlow->m_btnEasyConnect,SIGNAL(clicked(bool)),this,SLOT(slot_showEasyConnect()));
+    connect(m_mainwidlow->m_btnCarplay,SIGNAL(clicked(bool)),this,SLOT(slot_beginCarplay()));
 #endif
     connect(m_mainwidlow->m_btnSetUp,SIGNAL(clicked(bool)),this,SLOT(slot_showSetting()));
     connect(m_mainwidlow->m_btnMusic,SIGNAL(clicked(bool)),this,SLOT(slot_showMusic()));
@@ -84,7 +87,6 @@ void mainWindow::initConnection()
     connect(m_upwidclose,SIGNAL(finished()),this,SLOT(slot_closeanimationfinished()));
     connect(m_lowwidclose,SIGNAL(finished()),this,SLOT(slot_closeanimationfinished()));
 
-    // 返回键——返回主界面
     connect(m_musicWid->m_topwid->m_btnreturn,SIGNAL(clicked(bool)),this,SLOT(slot_returnanimation()));
     connect(m_cameraWid->m_topWid->m_btnreturn,SIGNAL(clicked(bool)),this,SLOT(slot_returnanimation()));
     connect(m_videoWid->m_topWid->m_btnreturn,SIGNAL(clicked(bool)),this,SLOT(slot_returnanimation()));
@@ -119,9 +121,26 @@ void mainWindow::slot_showEasyConnect()
     QTimer::singleShot(10,this,SLOT(slot_beginEasyConnect()));
 }
 
+void mainWindow::slot_beginCarplay()
+{
+    this->setWindowOpacity(0);
+    QTimer::singleShot(10,this,SLOT(slot_showBeginCarplay()));
+}
+
+void mainWindow::slot_showBeginCarplay(){
+    qDebug()<<"slot_showBeginCarplay begin...";
+    QProcess *process = new QProcess(this);
+    process->execute("/bin/z-link");
+    setWindowOpacity(1);
+    qDebug()<<"slot_showBeginCarplay end...";
+}
+
 void mainWindow::slot_beginEasyConnect()
 {
+#ifndef DEVICE_EVB
     m_mainwidlow->m_btnEasyConnect->blockSignals(true);
+    m_mainwidlow->m_btnCarplay->blockSignals(true);
+#endif
     m_mainwidlow->m_btnSetUp->blockSignals(true);
     m_mainwidlow->m_btnMusic->blockSignals(true);
     m_mainwidlow->m_btnVideo->blockSignals(true);
@@ -129,7 +148,7 @@ void mainWindow::slot_beginEasyConnect()
     m_mainwidlow->m_btnCamera->blockSignals(true);
     QProcess *process = new QProcess(this);
     process->execute("/usr/bin/EasyConnect/EasyConnected.RXW01.Linux -platform EGLFS");
-//    process->execute("./mnt/EasyConnect/run.sh");
+    //    process->execute("./mnt/EasyConnect/run.sh");
 
     m_waitDialog->hide();
     qDebug()<<"Easy Connect end";
@@ -139,7 +158,10 @@ void mainWindow::slot_beginEasyConnect()
 
 void mainWindow::slot_resetSiganls()
 {
+#ifndef DEVICE_EVB
     m_mainwidlow->m_btnEasyConnect->blockSignals(false);
+    m_mainwidlow->m_btnCarplay->blockSignals(false);
+#endif
     m_mainwidlow->m_btnSetUp->blockSignals(false);
     m_mainwidlow->m_btnMusic->blockSignals(false);
     m_mainwidlow->m_btnVideo->blockSignals(false);
@@ -229,9 +251,9 @@ void mainWindow::slot_updateUiByRes(QFileInfoList musicFileList,QFileInfoList vi
     }
 }
 
-// 解决无边框窗口在最小化之后子控件不刷新的问题
 void mainWindow::showEvent(QShowEvent *e)
 {
+    // slove window not update after animation.
     this->setAttribute(Qt::WA_Mapped);
     QWidget::showEvent(e);
 }

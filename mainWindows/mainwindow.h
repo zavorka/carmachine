@@ -71,8 +71,10 @@ private slots:
     void slot_standby();
     void slot_updateMedia1();
 
+    void slot_beginCarplay();
     void slot_beginEasyConnect();
     void slot_resetSiganls();
+    void slot_showBeginCarplay();
 public slots:
      void slot_updateMedia2();
     void slot_returnanimation();
