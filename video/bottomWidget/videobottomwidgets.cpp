@@ -46,7 +46,7 @@ void videoBottomWidgets::initLayout()
                                   "QPushButton::pressed{border-image:url(:/image/music/btn_play (3).png);}");
 
     m_btnOpenFile->setStyleSheet("QPushButton{border-image:url(:/image/video/video_open_file.png);}");
-#ifndef DEVICE_EVB
+#ifdef DEVICE_EVB
     m_btnOpenFile->setVisible(false);
 #endif
 
