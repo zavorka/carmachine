@@ -15,6 +15,10 @@ mainWidgetLow::mainWidgetLow(QWidget *parent):baseWidget(parent)
 
 void mainWidgetLow::initLayout()
 {
+#ifndef DEVICE_EVB
+    m_btnEasyConnect = new guideButton(":/image/main/icon_easy_connect.png","easyConnect",this);
+    m_btnEasyConnect->setFixedSize(tab_icon_size,tab_icon_size);
+#endif
     m_btnSetUp = new guideButton(":/image/main/icon_setting.png","radio",this);
     m_btnMusic = new guideButton(":/image/main/icon_music.png","music",this);
     m_btnVideo = new guideButton(":/image/main/icon_video.png","video",this);
@@ -29,6 +33,9 @@ void mainWidgetLow::initLayout()
 
     QHBoxLayout *hmianlyout = new QHBoxLayout;
     hmianlyout->addStretch(2);
+#ifndef DEVICE_EVB
+    hmianlyout->addWidget(m_btnEasyConnect,1);
+#endif
     hmianlyout->addWidget(m_btnSetUp,1);
     hmianlyout->addWidget(m_btnMusic,1);
     hmianlyout->addWidget(m_btnVideo,1);
