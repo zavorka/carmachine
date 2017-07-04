@@ -27,5 +27,6 @@
         <file>image/main/mini_pointer.png</file>
         <file>image/main/sec_pointer.png</file>
         <file>image/main/loading.gif</file>
+        <file>image/main/icon_carplay.png</file>
     </qresource>
 </RCC>
