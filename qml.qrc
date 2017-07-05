@@ -2,5 +2,6 @@
     <qresource prefix="/">
         <file>video.qml</file>
         <file>video3399.qml</file>
+        <file>camera.qml</file>
     </qresource>
 </RCC>

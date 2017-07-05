@@ -10,6 +10,7 @@
 
 #include "basewidget.h"
 #include "cameratopwidgets.h"
+#include "camerapreviewwidgets.h"
 
 #include <QApplication>
 #include <QCamera>
@@ -252,6 +253,8 @@ private:
 	QMediaRecorder *m_mediaRecorder;
 	static QPushButton *m_capture;
 	static QPushButton *m_mode;
+
+	cameraPreviewwidgets *m_previewWid;
 	
 	/*
 	 * Global vars

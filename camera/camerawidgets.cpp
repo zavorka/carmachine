@@ -102,7 +102,7 @@ QCameraViewfinder *cameraWidgets::m_viewfinder;
 cameraWidgets::cameraWidgets(QWidget *parent):baseWidget(parent)
 {
     setObjectName("cameraWidgets");
-    setStyleSheet("#cameraWidgets{border-image: url(:/image/camera/camera_bg.jpg);}");
+    setStyleSheet("#cameraWidgets{background:rgb(10,10,10);}");
     init();
     initLayout();
 }
@@ -165,9 +165,7 @@ void cameraWidgets::closeCamera()
     if (performance_measure) {
         print_performance_data ();
     }
-
-    
-}
+}   
 
 void cameraWidgets::slot_cameraerror(QCamera::Error value)
 {
@@ -691,7 +689,7 @@ gboolean cameraWidgets::setup_pipeline (void)
   GST_FIXME_OBJECT (camerabin, "elements created");
 
   if (sink) {
-    g_object_set (sink, "sync", TRUE, NULL);
+    g_object_set (sink, "sync", FALSE, NULL);
     gst_object_ref_sink(sink);
   } else {
     /* Get the inner viewfinder sink, this uses fixed names given
@@ -1283,25 +1281,21 @@ void cameraWidgets::init()
       "camerabin test");
     
     vfsink_name = g_strdup ("kmssink"); //default fakesink / waylandsink /autovideosink
-    preview_caps_name = g_strdup ("video/x-raw,format=RGBx,width=640,height=480");
+    preview_caps_name = g_strdup ("video/x-raw,format=NV12,width=640,height=480");
     filename = g_string_new ("/mnt/sdcard");
     videosrc_name = g_strdup ("v4l2src");
     viewfinder_caps_str = g_strdup ("video/x-raw,format=RGBx,width=640,height=480");
     image_width = 640;
     image_height = 480;
-
-    m_frame = new QWidget(this);
-    m_frame->setFixedSize(640, 480);
-
-    //m_viewfinder = new QCameraViewfinder(this);
-    //m_viewfinder->setFixedSize(1280, 960);
-    //m_viewfinder->setAttribute(Qt::WA_NativeWindow, true);
     
     m_capture = new QPushButton(mode == MODE_IMAGE ? "Take Picture" : "start Recorder", this);
-    m_capture->setFixedSize(300, 100);
+    //m_capture->setFixedSize(300, 100);
 
     m_mode = new QPushButton(mode == MODE_IMAGE ? "Capture Image Mode" : "Video Recorder Mode", this);
-    m_mode->setFixedSize(300, 100);
+    //m_mode->setFixedSize(300, 100);
+
+    m_previewWid = new cameraPreviewwidgets(this);
+    //m_leftWid->setFixedSize(640, 480);
     
 
     connect(m_capture, SIGNAL(released()),this,SLOT(slot_released()));
@@ -1319,33 +1313,18 @@ void cameraWidgets::initLayout()
 
     // 下半部分布局
     QVBoxLayout *hmiddlelyout = new QVBoxLayout;
-    //hmiddlelyout->addStretch(5);
-    QHBoxLayout *lyout1 = new QHBoxLayout;
-    lyout1->addStretch(0);
-    lyout1->addWidget(m_frame);
-    lyout1->addStretch(0);
-    hmiddlelyout->addLayout(lyout1,5);
+
+    hmiddlelyout->addWidget(m_previewWid,1);
     
     QHBoxLayout *lyout2 = new QHBoxLayout;
-    lyout2->addStretch(0);
-    lyout2->addWidget(m_capture);
-    lyout2->addStretch(0);
-    hmiddlelyout->addLayout(lyout2,1);
-    
-    QHBoxLayout *lyout3 = new QHBoxLayout;
-    lyout3->addStretch(0);
-    lyout3->addWidget(m_mode);
-    lyout3->addStretch(0);
-    hmiddlelyout->addLayout(lyout3,1);
-    //hmiddlelyout->addStretch(1);
-    hmiddlelyout->setContentsMargins(20,10,20,10);
-    hmiddlelyout->setSpacing(20);
+    lyout2->addWidget(m_capture,1);
+    lyout2->addWidget(m_mode,1);
+    lyout2->setContentsMargins(10,10,10,10);
+    lyout2->setSpacing(10);
+    hmiddlelyout->addLayout(lyout2,0);
 
-
-
-    vmainlyout->addWidget(m_topWid, 1);
-    vmainlyout->addStretch(0);
-    vmainlyout->addLayout(hmiddlelyout, 0);
+    vmainlyout->addWidget(m_topWid,0);
+    vmainlyout->addLayout(hmiddlelyout,1);
     vmainlyout->setContentsMargins(0,0,0,0);
     vmainlyout->setSpacing(0);
 
