@@ -28,6 +28,8 @@ fi
 #qmake and build target
 $QMAKE
 make $mulcore_cmd
+check_err_exit $?
+
 cp $TOP_DIR/Carmachine $BUILDROOT_TARGET_PATH/usr/bin/
 make clean
 echo "Carmachine app is ready."
