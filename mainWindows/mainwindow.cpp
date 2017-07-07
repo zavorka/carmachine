@@ -7,7 +7,7 @@
 #include <QProcess>
 
 #include "qprogressindicator.h"
-
+#include "PowerManager.h"
 mainWindow::mainWindow(QWidget *parent):baseWindow(parent)
   ,mediaHasUpdate(false)
 {
@@ -312,10 +312,23 @@ void mainWindow::keyPressEvent(QKeyEvent *event)
         QWidget::keyPressEvent(event);
         break;
     case Qt::Key_PowerOff:   // when key_power enter
+    	qDebug()<<"key value is PowerKey "<<event->key();
+		qDebug()<<"Screen Status is "<<rk_get_screen_status();
         if(m_stackedWid->currentWidget()==m_videoWid){
             m_videoWid->setPlayerPause();
         }
-        QTimer::singleShot(100, this, SLOT(slot_standby()));
+
+		if(rk_get_screen_status())
+		{
+			qDebug()<<"key value is PowerKey, screen off ";
+			rk_screen_off();
+			QTimer::singleShot(100, this, SLOT(slot_standby()));
+		}
+		else
+		{
+			qDebug()<<"key value is PowerKey, screen ON ";
+			rk_screen_on();
+		}
         break;
     default:
         break;

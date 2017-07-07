@@ -80,6 +80,9 @@ include(gallery/gallery.pri)
 INCLUDEPATH +=$$PWD camera
 include(camera/camera.pri)
 
+INCLUDEPATH +=$$PWD PowerManager
+include(PowerManager/PowerManager.pri)
+
 
 SOURCES +=$$PWD/singleApplication/qsingleapplication.cpp \
 
