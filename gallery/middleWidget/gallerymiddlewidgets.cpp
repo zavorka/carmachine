@@ -35,9 +35,14 @@ QFileInfoList findImgFiles(const QString& path)
         }
         else
         {
-            if (info.suffix() == "jpg" || info.suffix() == "bmp" || info.suffix() == "png"
-                    ||info.suffix() == "bmp" || info.suffix() == "jpeg" || info.suffix() == "titf"
-                    ||info.suffix() == "svg")
+            if (info.suffix().compare("jpg",Qt::CaseInsensitive) == 0
+                    ||info.suffix().compare("bmp",Qt::CaseInsensitive) == 0
+                    ||info.suffix().compare("png",Qt::CaseInsensitive) == 0
+                    ||info.suffix().compare("bmp",Qt::CaseInsensitive) == 0
+                    ||info.suffix().compare("jpeg",Qt::CaseInsensitive) == 0
+                    ||info.suffix().compare("titf",Qt::CaseInsensitive) == 0
+                    ||info.suffix().compare("svg",Qt::CaseInsensitive) == 0
+                    ||info.suffix().compare("gif",Qt::CaseInsensitive) == 0)
             {
                 imageFiles.append(info);
             }
