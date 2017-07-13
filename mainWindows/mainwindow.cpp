@@ -130,7 +130,9 @@ void mainWindow::slot_beginCarplay()
 void mainWindow::slot_showBeginCarplay(){
     qDebug()<<"slot_showBeginCarplay begin...";
     QProcess *process = new QProcess(this);
+    system("/bin/z-link.sh");
     process->execute("/bin/z-link");
+    system("/bin/unz-link.sh");
     setWindowOpacity(1);
     qDebug()<<"slot_showBeginCarplay end...";
 }
@@ -147,9 +149,15 @@ void mainWindow::slot_beginEasyConnect()
     m_mainwidlow->m_btnGallery->blockSignals(true);
     m_mainwidlow->m_btnCamera->blockSignals(true);
     QProcess *process = new QProcess(this);
-    process->execute("/usr/bin/EasyConnect/EasyConnected.RXW01.Linux -platform EGLFS");
+     if(QFile::exists("/data/"))
+    {
+	qDebug()<<"Easy Connect /data";
+    process->execute("/usr/bin/EasyConnect/EasyConnected.RXW01.Linux -platform EGLFS -l 0 -s 83991906 -p /data");
     //    process->execute("./mnt/EasyConnect/run.sh");
+    }else{
+	process->execute("/usr/bin/EasyConnect/EasyConnected.RXW01.Linux -platform EGLFS -l 0 -s 83991906 -p /usr/share");
 
+     	}
     m_waitDialog->hide();
     qDebug()<<"Easy Connect end";
 
