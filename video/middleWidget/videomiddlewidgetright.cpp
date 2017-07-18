@@ -28,6 +28,8 @@ void videoMiddleWidgetRight::initLayout()
     QVBoxLayout *vmianlyout = new QVBoxLayout;
 
     m_listHeader = new listHeader(this);
+    m_listHeader->setVisible(false);
+    m_listHeader->setFixedHeight(100);
 
     m_stackedWid = new QStackedWidget(this);
     m_localTable = new videoLocalListTable(m_stackedWid);
@@ -38,7 +40,7 @@ void videoMiddleWidgetRight::initLayout()
 
     vmianlyout->addWidget(m_listHeader);
     vmianlyout->addWidget(m_stackedWid);
-    vmianlyout->setContentsMargins(10,0,10,0);
+    vmianlyout->setContentsMargins(40,0,40,0);
 
     setLayout(vmianlyout);
 }

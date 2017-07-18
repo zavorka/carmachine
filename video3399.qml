@@ -22,6 +22,7 @@ Rectangle {
         id: video
         objectName: qsTr("videoContent")
         anchors.fill: parent
+	anchors.topMargin: 115
         source: mediaPlayer
     }
 }

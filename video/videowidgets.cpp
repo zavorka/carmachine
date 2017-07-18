@@ -56,6 +56,7 @@ void videoWidgets::initLayout()
     m_topWid = new videoTopWidgets(this);
     m_middleWid = new videoMiddleWidgets(this);
     m_bottomWid = new videoBottomWidgets(this);
+    m_bottomWid->setVisible(false);
 
     vmainlyout->addWidget(m_topWid);
     vmainlyout->addWidget(m_middleWid);
@@ -87,8 +88,8 @@ void videoWidgets::initPlayerAndConnection()
     connect(m_bottomWid->m_btnOpenFile,SIGNAL(clicked(bool)),this,SLOT(slot_addVideo()));
     connect(m_bottomWid->m_volWidget,SIGNAL(sig_valueChanged(int)),this,SLOT(slot_volumeChanged(int)));
 
-    connect(m_middleWid->m_leftWid->getContentWidget(),SIGNAL(contentOneClick()),this,SLOT(slot_setPlayPause()));
-    connect(m_middleWid->m_leftWid->getContentWidget(),SIGNAL(contentDoubleClick()),this,SLOT(slot_onContentDoubleClick()));
+//    connect(m_middleWid->m_leftWid->getContentWidget(),SIGNAL(contentOneClick()),this,SLOT(slot_setPlayPause()));
+//    connect(m_middleWid->m_leftWid->getContentWidget(),SIGNAL(contentDoubleClick()),this,SLOT(slot_onContentDoubleClick()));
     connect(m_middleWid->m_leftWid,SIGNAL(sig_sliderPositionChanged(int)),this,SLOT(slot_onSliderPositionChanged(int)));
 
     connect(m_topWid->m_btnreturn,SIGNAL(clicked(bool)),this,SLOT(slot_setPause()));
@@ -158,6 +159,8 @@ void videoWidgets::slot_onLocalListItemDoubleClick(int row, int)
         QTimer::singleShot(200,this,SLOT(slot_denyPlay()));
     }
 #endif
+    m_middleWid->on_playMode();
+    m_bottomWid->setVisible(true);
 }
 
 void videoWidgets::slot_setPlayPause()
@@ -261,10 +264,19 @@ void videoWidgets::savaSetting()
 
 void videoWidgets::slot_setPause()
 {
-    // 离开之前要释放音频通道,QMediaPlayer release方法，只好设置media为null
-    m_player->stop();
-    m_player->setMedia(NULL);
-    setOriginState();
+    if(m_middleWid->isCurrentPlayMode()){
+        m_player->stop();
+        m_player->setMedia(NULL);
+        setOriginState();
+        m_middleWid->on_ListMode();
+        m_bottomWid->setVisible(false);
+    }else{
+        // release media source.
+        m_player->stop();
+        m_player->setMedia(NULL);
+        setOriginState();
+        mainwid->slot_returnanimation();
+    }
 }
 
 void videoWidgets::updateVolume(bool volumeAdd)

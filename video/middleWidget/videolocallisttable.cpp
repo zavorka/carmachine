@@ -6,10 +6,27 @@
 #include "global_value.h"
 
 #ifdef DEVICE_EVB
-int video_item_height = 55;
+int video_item_height = 90;
 #else
 int video_item_height = 35;
 #endif
+
+QLineDelegate::QLineDelegate(QTableView* tableView)
+{
+    int gridHint = tableView->style()->styleHint(QStyle::SH_Table_GridLineColor, new QStyleOptionViewItemV4());
+    QColor gridColor = static_cast<QRgb>(gridHint);
+    pen = QPen(gridColor, 0, tableView->gridStyle());
+    view = tableView;
+}
+void QLineDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option,const QModelIndex& index)const
+{
+    QStyledItemDelegate::paint(painter, option, index);
+    QPen oldPen = painter->pen();
+    painter->setPen(pen);
+    //painter->drawLine(option.rect.topRight(), option.rect.bottomRight());
+    painter->drawLine(option.rect.bottomLeft(), option.rect.bottomRight());
+    painter->setPen(oldPen);
+}
 
 videoLocalListTable::videoLocalListTable(QWidget *parent):QTableWidget(parent)
 {
@@ -22,28 +39,43 @@ void videoLocalListTable::init()
     m_previousFousedRow = -1;
     m_playingItemRow = -1;
 
+    QFont listFont = this->font();
+    listFont.setPixelSize(font_size_big);
+    this->setFont(listFont);
+
     setMouseTracking(true);
     setFrameShadow(QFrame::Plain);
     setFrameShape(QFrame::NoFrame);
     setFocusPolicy(Qt::NoFocus);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    //   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);//垂直scrollbar禁用
+    //   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Expanding);
-    setShowGrid(false);       //隐藏线
-    this->horizontalHeader()->setVisible(false);
-    this->verticalHeader()->setVisible(false);
-    setEditTriggers(QTableWidget::NoEditTriggers);  // 设置表格不可编辑
-    setSelectionBehavior (QAbstractItemView::SelectRows); //设置点击选取行
+    setShowGrid(false);
+    setItemDelegate(new QLineDelegate(this));
+    setEditTriggers(QTableWidget::NoEditTriggers);
+    setSelectionBehavior (QAbstractItemView::SelectRows);
     setSelectionMode (QAbstractItemView::SingleSelection);
     setContextMenuPolicy(Qt::CustomContextMenu);
     setAcceptDrops(true);
 
-    horizontalHeader()->setVisible(false);
-    verticalHeader()->setVisible(false);
-
     insertColumn(0);
     insertColumn(1);
-    verticalHeader()->setDefaultSectionSize(video_item_height);//设置默认item高度
+
+    QHeaderView *horizontalHeader =  this->horizontalHeader();
+    horizontalHeader->setVisible(true);
+    horizontalHeader->setDefaultAlignment(Qt::AlignLeft);
+    QFont headerFont = horizontalHeader->font();
+    headerFont.setPixelSize(font_size_big);
+    horizontalHeader->setFont(headerFont);
+    horizontalHeader->setHighlightSections(false);
+    horizontalHeader->setStyleSheet("QHeaderView::section{background-color:rgba(150,150,150,0)}");
+
+    verticalHeader()->setVisible(false);
+    verticalHeader()->setDefaultSectionSize(video_item_height);
+
+    QStringList header;
+    header<<tr("视频播放列表")<<tr(" ");
+    setHorizontalHeaderLabels(header);
 
     verticalScrollBar()->setStyleSheet("QScrollBar{background:transparent; width: 10px;margin: 0px 2px 0px 0px;}"
                                        "QScrollBar::handle{background:rgb(217,217,217);border-radius:4px;}"

@@ -3,6 +3,19 @@
 
 #include <QObject>
 #include <QTableWidget>
+#include <QStyledItemDelegate>
+#include <QPen>
+
+class QLineDelegate : public QStyledItemDelegate
+{
+public:
+    QLineDelegate(QTableView* tableView);
+protected:
+    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const;
+private:
+    QPen pen;
+    QTableView* view;
+};
 
 class videoLocalListTable:public QTableWidget
 {
