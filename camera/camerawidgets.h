@@ -8,7 +8,7 @@
 #define GST_USE_UNSTABLE_API 1
 
 
-#include "basewidget.h"
+#include "base/basewidget.h"
 #include "cameratopwidgets.h"
 #include "camerapreviewwidgets.h"
 
@@ -16,6 +16,8 @@
 #include <QCamera>
 #include <QCameraViewfinder>
 #include <QCameraImageCapture>
+#include <QDebug>
+#include <QThread>
 #include <QPushButton>
 #include <QMediaRecorder>
 #include <QFrame>
@@ -348,10 +350,37 @@ private slots:
 	void updateRecorderState(QMediaRecorder::State state);
 	void updateRecordTime();
 	void displayRecorderError();
+	void handleResults(const QString &);
 
 signals:
 	void sig_openCamera();
 
 };
+
+
+class OpenCameraThread : public QThread
+{
+    Q_OBJECT
+public:
+	OpenCameraThread(cameraWidgets *parent=0) {mWidgets = parent;}
+	~OpenCameraThread(){}
+
+	void run() {
+        QString result;
+        /* expensive or blocking operation  */
+	if (mWidgets)
+		mWidgets->openCamera();
+        emit resultReady(result);
+    }
+
+private:
+	cameraWidgets* mWidgets;
+
+
+signals:
+    void resultReady(const QString &s);
+};
+
+
 
 #endif // CAMERAWIDGETS_H
