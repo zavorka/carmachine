@@ -91,7 +91,6 @@
 #include "camerawidgets.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QDebug>
 #include <gst/video/videooverlay.h>
 
 QPushButton *cameraWidgets::m_capture;
@@ -134,8 +133,12 @@ cameraWidgets::~cameraWidgets()
 }
 
 void cameraWidgets::showEvent(QShowEvent *event) {
-    qDebug() << "cameraWidgets::showEvent";
-    openCamera();
+    qDebug() << "cameraWidgets::showEvent~~~~~~~~~~~";
+    //openCamera();
+    OpenCameraThread *workerThread = new OpenCameraThread(this);
+    connect(workerThread, SIGNAL(resultReady(QString)), this, SLOT(handleResults(QString)));
+    connect(workerThread, SIGNAL(finished()), workerThread, SLOT(deleteLater()));
+    workerThread->start();
 }
 
 void cameraWidgets::hideEvent(QHideEvent *event) {
@@ -155,6 +158,7 @@ void cameraWidgets::openCamera()
     if (setup_pipeline()) {
         g_idle_add ((GSourceFunc) run_preview_pipeline, NULL);
     }
+    qDebug() << "openCamera end";
 }
 
 void cameraWidgets::closeCamera()
@@ -249,6 +253,10 @@ void cameraWidgets::updateRecordTime()
 void cameraWidgets::displayRecorderError()
 {
     qDebug() << "Capture error:" << m_mediaRecorder->errorString();
+}
+
+void cameraWidgets::handleResults(const QString &) {
+    qDebug() << "Thread run over";
 }
 
 GstPadProbeReturn
@@ -791,6 +799,7 @@ cameraWidgets::stop_capture_cb (GObject * self, GParamSpec * pspec, gpointer use
   gboolean idle = FALSE;
 
   g_object_get (camerabin, "idle", &idle, NULL);
+  qDebug() << "camerabin idle:" << idle;
 
   if (idle) {
     if (capture_count < capture_total) {
@@ -817,6 +826,10 @@ cameraWidgets::stop_capture (gpointer user_data)
 void cameraWidgets::notify_readyforcapture(GObject * obj,GParamSpec * pspec,gpointer user_data) {
     g_object_get (obj, "ready-for-capture", &ready_for_capture, NULL);
         qDebug() << "notify_readyforcapture:" << ready_for_capture;
+    if (mode == MODE_VIDEO && ready_for_capture) {
+        recording = FALSE;
+        m_capture->setText("start Recorder");
+    }
 }
 
 void cameraWidgets::set_metadata (GstElement * camera)
@@ -921,6 +934,7 @@ gboolean cameraWidgets::run_taking_pipeline (gpointer user_data)
 
 gboolean cameraWidgets::run_preview_pipeline (gpointer user_data)
 {
+  qDebug() << "run_preview_pipeline";
   GstCaps *preview_caps = NULL;
 
   g_object_set (camerabin, "mode", mode, NULL);

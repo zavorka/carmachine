@@ -12,7 +12,7 @@ cameraTopWidgets::cameraTopWidgets(QWidget *parent):baseWidget(parent)
 
 void cameraTopWidgets::initWidget()
 {
-    //setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed); // 竖排固定
+    setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed); // 竖排固定
     QHBoxLayout *hmainyout=new QHBoxLayout;
 
     m_btnreturn=new FourStateButton(return_resource_str,this);
