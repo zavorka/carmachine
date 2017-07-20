@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 TOP_DIR=$(pwd)
 BUILDROOT_TARGET_PATH=$(pwd)/../../buildroot/output/target/
