@@ -1298,7 +1298,7 @@ void cameraWidgets::init()
     preview_caps_name = g_strdup ("video/x-raw,format=NV12,width=640,height=480");
     filename = g_string_new ("/mnt/sdcard");
     videosrc_name = g_strdup ("v4l2src");
-    viewfinder_caps_str = g_strdup ("video/x-raw,format=RGBx,width=640,height=480");
+    viewfinder_caps_str = g_strdup ("video/x-raw,format=NV12,width=640,height=480");
     image_width = 640;
     image_height = 480;
     
