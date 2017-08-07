@@ -31,7 +31,7 @@ void settingMiddleWidgets::initLayout()
 void settingMiddleWidgets::initConnection()
 {
     connect(m_leftWid->m_funtionlist,SIGNAL(currentIndexChanged(int)),this,SLOT(slot_currentWidgetChanged(int)));
-    slot_currentWidgetChanged(0);  // 初始化当前界面在Wifi管理类
+    slot_currentWidgetChanged(0);
 }
 
 void settingMiddleWidgets::slot_currentWidgetChanged(int index)
@@ -42,6 +42,7 @@ void settingMiddleWidgets::slot_currentWidgetChanged(int index)
         m_stackedWid->setCurrentIndex(0);
         break;
     default:
+        m_otherWid->initBluetooth();
         m_stackedWid->setCurrentIndex(1);
         break;
     }

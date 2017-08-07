@@ -11,10 +11,6 @@
 mainWindow::mainWindow(QWidget *parent):baseWindow(parent)
   ,mediaHasUpdate(false)
 {
-    setAttribute(Qt::WA_TranslucentBackground, true);
-    setWindowFlags(Qt::FramelessWindowHint);
-
-    //    m_mainwid->setStyleSheet("QLabel{color:white;}");
     initLayout();
     initAnimation();
     initConnection();

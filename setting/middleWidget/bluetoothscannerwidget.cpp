@@ -15,8 +15,7 @@ int bt_item_height = 25;
 
 
 BluetoothScannerWidget::BluetoothScannerWidget(QWidget *parent)
-    :baseWidget(parent), localDevice(new QBluetoothLocalDevice),
-      ui(new Ui_DeviceDiscovery)
+    :baseWidget(parent),ui(new Ui_DeviceDiscovery)
 {
     ui->setupUi(this);
     this->setObjectName("BluetoothScannerWidget");
@@ -27,7 +26,10 @@ BluetoothScannerWidget::BluetoothScannerWidget(QWidget *parent)
     ui->scan->setFixedSize(bt_button_width,bt_button_height);
     ui->clear->setFixedSize(bt_button_width,bt_button_height);
     ui->list->setStyleSheet("QListWidget{background:rgb(27,29,36)}");
+}
 
+void BluetoothScannerWidget::init(){
+    localDevice = new QBluetoothLocalDevice;
     discoveryAgent = new QBluetoothDeviceDiscoveryAgent();
 
     connect(ui->inquiryType, SIGNAL(toggled(bool)), this, SLOT(setGeneralUnlimited(bool)));
@@ -44,14 +46,13 @@ BluetoothScannerWidget::BluetoothScannerWidget(QWidget *parent)
 
     connect(localDevice, SIGNAL(hostModeStateChanged(QBluetoothLocalDevice::HostMode)),
             this, SLOT(hostModeStateChanged(QBluetoothLocalDevice::HostMode)));
-
     hostModeStateChanged(localDevice->hostMode());
+
     // add context menu for devices to be able to pair device
     ui->list->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->list, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(displayPairingMenu(QPoint)));
     connect(localDevice, SIGNAL(pairingFinished(QBluetoothAddress,QBluetoothLocalDevice::Pairing))
             , this, SLOT(pairingDone(QBluetoothAddress,QBluetoothLocalDevice::Pairing)));
-
 }
 
 BluetoothScannerWidget::~BluetoothScannerWidget()
@@ -106,7 +107,6 @@ void BluetoothScannerWidget::itemActivated(QListWidgetItem *item)
     QString btName = item->toolTip();
 
     qDebug()<<"addressss:"<<btAddress;
-
     QBluetoothAddress address(btAddress);
     QBluetoothLocalDevice::Pairing pairingStatus = localDevice->pairingStatus(address);
     if (pairingStatus == QBluetoothLocalDevice::Paired || pairingStatus == QBluetoothLocalDevice::AuthorizedPaired )

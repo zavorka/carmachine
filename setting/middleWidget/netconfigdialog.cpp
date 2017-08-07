@@ -20,7 +20,7 @@ enum {
 
 netConfigDialog::netConfigDialog(QWidget *parent):QDialog(parent)
 {
-    setWindowFlags(Qt::Dialog|Qt::FramelessWindowHint);
+    setWindowFlags(Qt::Window|Qt::WindowStaysOnTopHint);
     setStyleSheet("QLabel{color:black}"             
                   "QPushButton{color:black}");
 

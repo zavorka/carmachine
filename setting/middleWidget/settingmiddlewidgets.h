@@ -21,6 +21,7 @@ private:
     QStackedWidget *m_stackedWid;
     rightStackedWidgets0 *m_wifiWid;
     rightStackedWidgets1 *m_otherWid;
+
 private slots:
     void slot_currentWidgetChanged(int index);
 signals:

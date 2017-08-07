@@ -22,6 +22,8 @@ class BluetoothScannerWidget:public baseWidget,public Ui::DeviceDiscovery
 public:
     BluetoothScannerWidget(QWidget *parent = 0);
     ~BluetoothScannerWidget();
+
+    void init();
 public slots:
     void addDevice(const QBluetoothDeviceInfo&);
     void on_power_clicked(bool clicked);

@@ -17,7 +17,7 @@ CMessageBox::CMessageBox(QWidget *parent):QDialog(parent)
 {
     this->setFixedSize(cbox_width,cbox_height);
     move((int)((parent->width()-width())/2),(int)((parent->height()-height())/2));
-    this->setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
+    this->setWindowFlags(Qt::Dialog);
     setStyleSheet("QDialog{border:1.5px solid rgb(0,120,215);background:rgb(43,43,43)}"
                   "QLabel{color:white}");
     initLayout();

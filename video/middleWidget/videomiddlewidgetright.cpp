@@ -87,7 +87,7 @@ QFileInfoList videoMiddleWidgetRight::findVideoFiles(const QString& path)
         {
             if (info.suffix() == "mp4" || info.suffix() == "avi" || info.suffix() == "rm"
                     ||info.suffix() == "rmvb" || info.suffix() == "wmv" || info.suffix() == "mkv"
-                    ||info.suffix() == "mov" || info.suffix() == "asf")
+                    ||info.suffix() == "mov" || info.suffix() == "asf" || info.suffix() == "ts")
             {
                 videoFiles.append(info);
             }

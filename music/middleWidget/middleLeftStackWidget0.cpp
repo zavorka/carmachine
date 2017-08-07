@@ -127,7 +127,8 @@ void middleLeftStackWidget0::updateResUi(QFileInfoList fileList)
 
 void middleLeftStackWidget0::slot_addSong()
 {
-    QFileDialog *dialog = new QFileDialog(mainwid,"selete file");
+    QFileDialog *dialog = new QFileDialog(mainwid,"Selete File");
+    dialog->setAttribute(Qt::WA_DeleteOnClose, true);
     if(dialog->exec()==QFileDialog::Accepted)
     {
         QStringList files = dialog->selectedFiles();

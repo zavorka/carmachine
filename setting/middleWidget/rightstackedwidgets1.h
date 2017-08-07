@@ -12,6 +12,7 @@ class rightStackedWidgets1:public baseWidget
 public:
     rightStackedWidgets1(QWidget *parent);
 
+    void initBluetooth();
 private:
     BluetoothScannerWidget *m_scannerWidget;
 

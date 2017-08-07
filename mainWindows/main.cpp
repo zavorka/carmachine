@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
         mainWindow w;
         app.w=&w;
 #ifdef DEVICE_EVB
-        w.showFullScreen();
+        w.showMaximized();
 #else
         w.showFullScreen();
 #endif

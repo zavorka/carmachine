@@ -13,6 +13,10 @@ void rightStackedWidgets1::initData()
     m_scannerWidget = new BluetoothScannerWidget(this);
 }
 
+void rightStackedWidgets1::initBluetooth(){
+    m_scannerWidget->init();
+}
+
 void rightStackedWidgets1::initLayout()
 {
     QVBoxLayout *vmainlyout = new QVBoxLayout;

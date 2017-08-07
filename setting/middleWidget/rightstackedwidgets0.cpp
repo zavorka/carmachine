@@ -352,7 +352,7 @@ void rightStackedWidgets0::slot_showItemDetail(int row,int)
     if (dialog == NULL)
         return;
     dialog->paramsFromScanResults(m_tabScanResult->m_netWorks[row]);
-    dialog->exec();
+    dialog->show();
 }
 
 
