@@ -1,6 +1,5 @@
 #include "cameratopwidgets.h"
 #include <QHBoxLayout>
-#include <QLabel>
 #include "global_value.h"
 
 cameraTopWidgets::cameraTopWidgets(QWidget *parent):baseWidget(parent)
@@ -12,6 +11,7 @@ cameraTopWidgets::cameraTopWidgets(QWidget *parent):baseWidget(parent)
 
 void cameraTopWidgets::initWidget()
 {
+    setWindowOpacity(0.1);
     setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed); // 竖排固定
     QHBoxLayout *hmainyout=new QHBoxLayout;
 
@@ -49,11 +49,11 @@ void cameraTopWidgets::initWidget()
     label1->setFixedSize(6,16);
     label1->adjustSize();
 
-    QLabel*label2=new QLabel("Camera",this);
-    QFont font = label2->font();
+    m_title=new QLabel("Camera",this);
+    QFont font = m_title->font();
     font.setPixelSize(font_size_big);
-    label2->setFont(font);
-    label2->setAlignment(Qt::AlignCenter);
+    m_title->setFont(font);
+    m_title->setAlignment(Qt::AlignCenter);
 
     //lyout1
     QHBoxLayout *lyout1 = new QHBoxLayout;
@@ -72,7 +72,7 @@ void cameraTopWidgets::initWidget()
     lyout2->setSpacing(12);
 
     hmainyout->addLayout(lyout1,1);
-    hmainyout->addWidget(label2,1);
+    hmainyout->addWidget(m_title,1);
     hmainyout->addLayout(lyout2,1);
     hmainyout->setContentsMargins(0,0,0,0);
     setLayout(hmainyout);

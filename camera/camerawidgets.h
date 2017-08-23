@@ -25,8 +25,18 @@
 #include <QWidget>
 #include <QOpenGLWidget>
 #include <QSurfaceFormat>
+#include <QLabel>
+#include <QComboBox>
+#include <QTimer>
 
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <stddef.h>
 
+#include <linux/v4l2-subdev.h>
 
 #include <gst/gst.h>
 #include <gst/video/videooverlay.h>
@@ -57,10 +67,19 @@ GST_DEBUG_CATEGORY_STATIC (camerabin_test);
 
 #define TIMEDIFF_ARGS(t) (t)
 
+#define RK_ENUM_VIDEO_NUM_MAX 10
+#define RK_CAM_ATTRACED_INUPUT_MAX 3
+
 
 /* capture mode options*/
 #define MODE_VIDEO 2
 #define MODE_IMAGE 1
+#define MODE_VIEWFINDER 0
+
+#define SUPPORTED_IMAGE_CAPTURE_CAPS_PROPERTY "image-capture-supported-caps"
+#define SUPPORTED_VIDEO_CAPTURE_CAPS_PROPERTY "video-capture-supported-caps"
+#define SUPPORTED_VIEWFINDER_CAPS_PROPERTY "viewfinder-supported-caps"
+
 
 /* photography interface command line options */
 #define EV_COMPENSATION_NONE -G_MAXFLOAT
@@ -71,6 +90,64 @@ GST_DEBUG_CATEGORY_STATIC (camerabin_test);
 #define ISO_SPEED_NONE -G_MAXINT
 #define WHITE_BALANCE_MODE_NONE -G_MAXINT
 #define COLOR_TONE_MODE_NONE -G_MAXINT
+
+enum RK_CAM_ATTACHED_TO_e {
+	 RK_CAM_ATTACHED_TO_INVALID,
+	 RK_CAM_ATTACHED_TO_ISP,
+	 RK_CAM_ATTACHED_TO_CIF,
+	 RK_CAM_ATTACHED_TO_USB
+};
+
+struct rk_cam_video_input_infos {
+   int index;
+   char name[30];
+   void* dev;
+   RK_CAM_ATTACHED_TO_e type;
+};
+
+struct rk_cam_video_node {
+   char card[30]; //
+   int video_index;
+   int input_nums;
+   struct rk_cam_video_input_infos input[RK_CAM_ATTRACED_INUPUT_MAX];
+};
+
+#define ISP_DEV_VIDEO_NODES_NUM_MAX 5
+struct rk_isp_dev_info {
+	int isp_dev_node_nums;
+	struct rk_cam_video_node video_nodes[ISP_DEV_VIDEO_NODES_NUM_MAX];
+};
+ 
+#define CIF_DEV_VIDEO_NODES_NUM_MAX 4
+struct rk_cif_dev_info {
+	int cif_index;
+	struct rk_cam_video_node video_node;
+};
+
+struct rk_cif_dev_infos {
+	int cif_dev_node_nums;
+	struct rk_cif_dev_info cif_devs[CIF_DEV_VIDEO_NODES_NUM_MAX];
+};
+
+#define USB_CAM_DEV_VIDEO_NODES_NUM_MAX 2
+struct rk_usb_cam_dev_infos {
+	int usb_dev_node_nums;
+	struct rk_cam_video_node video_nodes[USB_CAM_DEV_VIDEO_NODES_NUM_MAX];
+};
+ 
+#define RK_SUPPORTED_CAMERA_NUM_MAX 10
+struct rk_cams_dev_info {
+	int num_camers;
+	struct rk_cam_video_input_infos*  cam[RK_SUPPORTED_CAMERA_NUM_MAX];
+	struct rk_isp_dev_info isp_dev;
+	struct rk_cif_dev_infos cif_devs;
+	struct rk_usb_cam_dev_infos usb_devs;
+};
+
+typedef struct rk_cam_info {
+    int video_index;
+    struct rk_cam_video_input_infos cam;
+} camerainfo;
 
 
 typedef struct _CaptureTiming
@@ -198,6 +275,7 @@ create_mp4_profile (void)
 
 static GstElement *camerabin = NULL;
 static GstElement *viewfinder_sink = NULL;
+static GstElement *m_videoSrc = NULL;
 static gulong camera_probe_id = 0;
 static gulong viewfinder_probe_id = 0;
 static gulong m_winid = 0;
@@ -233,6 +311,8 @@ static gboolean ready_for_capture = FALSE;
 static gulong ready_for_capture_id = 0;
 static gboolean recording = FALSE;
 
+static struct rk_cams_dev_info g_cam_infos;
+
 class QGstreamerVideoRendererInterface;
 
 class cameraWidgets:public baseWidget
@@ -245,18 +325,28 @@ public:
 	void closeCamera();
 	void openCamera();
 
-    cameraTopWidgets *m_topWid;
+    static cameraTopWidgets *m_topWid;
+
 private:
-    QCamera *m_camera;
+    /*QCamera *m_camera;
     static QCameraViewfinder *m_viewfinder;
 	static QWidget *m_frame;
 	QGstreamerVideoRendererInterface *m_viewfinderInterface;
     QCameraImageCapture *m_imageCapture;
-	QMediaRecorder *m_mediaRecorder;
+	QMediaRecorder *m_mediaRecorder;*/
 	static QPushButton *m_capture;
 	static QPushButton *m_mode;
+    static QComboBox *m_camerasbox;
+    static QComboBox *m_previewsizesbox;
+	static cameraWidgets *m_cameraWidgets;
+	static gboolean m_camera_error;
 
 	cameraPreviewwidgets *m_previewWid;
+
+    static QList<camerainfo> m_caminfoList;
+
+    static int m_cam_index;
+    static int m_preview_index;
 	
 	/*
 	 * Global vars
@@ -265,22 +355,22 @@ private:
 	
 	/* commandline options */
 	gchar *videosrc_name = NULL;
-	gchar *videodevice_name = NULL;
+    static gchar *videodevice_name;
 	gchar *audiosrc_name = NULL;
 	gchar *wrappersrc_name = NULL;
 	gchar *imagepp_name = NULL;
 	gchar *vfsink_name = NULL;
-	gint image_width = 0;
-	gint image_height = 0;
-	gint view_framerate_num = 0;
-	gint view_framerate_den = 0;
+    static gint image_width;
+    static gint image_height;
+    static gfloat view_framerate_num;
+    static gint view_framerate_den;
 	gboolean no_xwindow = FALSE;
 	gchar *gep_targetname = NULL;
 	gchar *gep_profilename = NULL;
 	gchar *gep_filename = NULL;
-	gchar *image_capture_caps_str = NULL;
-	gchar *viewfinder_caps_str = NULL;
-	gchar *video_capture_caps_str = NULL;
+    static gchar *image_capture_caps_str;
+    static gchar *viewfinder_caps_str;
+    static gchar *video_capture_caps_str;
 	gchar *audio_capture_caps_str = NULL;
 	gboolean performance_measure = FALSE;
 	gchar *performance_targets_str = NULL;
@@ -301,8 +391,21 @@ private:
 	GstClockTime target_preview_to_precapture;
 	GstClockTime target_shot_to_buffer;
 
+	QList<QCameraViewfinderSettings> m_supportedViewfinderSettings;
+    static QString m_location;
+    QLabel *m_record_time = NULL;
+    QTimer *m_timer = NULL;
+    int m_recorder_time;
+
     void init();
     void initLayout();
+
+    int getCameraInfos(struct rk_cams_dev_info* cam_infos);
+	void updateSupportedViewfinderSettings();
+    void updateCamerasBox();
+    void updatePreviewSizesBox();
+	GstCaps *supportedCaps(int mode) const;
+    void updateCameraParameter();
 
 	static GstPadProbeReturn camera_src_get_timestamp_probe (GstPad * pad, GstPadProbeInfo * info,
     	gpointer udata);
@@ -324,12 +427,16 @@ private:
 	void cleanup_pipeline (void);
 	gboolean setup_pipeline_element (GstElement * element, const gchar * property_name,
     	const gchar * element_name, GstElement ** res_elem);
-	void set_camerabin_caps_from_string (void);
+    static void set_camerabin_caps_from_string (void);
 	gboolean setup_pipeline (void);
 	static void notify_readyforcapture (GObject * obj, GParamSpec * pspec,
 		 gpointer user_data);
-	bool isReady() const;
-	void setupViewfinder(QObject * viewfinder);
+
+    static void updateCamerabarStatus(gboolean enable);
+
+    void start_timer_count();
+    void stop_timer_count();
+    void updateRecordTime();
 
 protected:
 	virtual void	showEvent(QShowEvent *event);
@@ -339,21 +446,20 @@ protected:
 private slots:
 	void slot_pressed();
 	void slot_capture();
- 	void readyForCapture(bool ready);
-	void processCapturedImage(int requestId, const QImage& img);
-	void imageSaved(int id,const QString &filename);
 	void slot_released();
-	void slot_captureerror(int id, QCameraImageCapture::Error error, const QString &errorString);
-	void slot_cameraerror(QCamera::Error value);
 
 	void slot_modeswitch();
-	void updateRecorderState(QMediaRecorder::State state);
-	void updateRecordTime();
-	void displayRecorderError();
 	void handleResults(const QString &);
+    void slot_camera_error(QString error);
+    void slot_capture_done(QString location);
 
+    void slot_camera_changed(int index);
+    void slot_previewsize_changed(int index);
+    void slot_time_out();
 signals:
 	void sig_openCamera();
+    void sig_camera_error(QString error);
+    void sig_capture_done(QString location);
 
 };
 
@@ -363,13 +469,13 @@ class OpenCameraThread : public QThread
     Q_OBJECT
 public:
 	OpenCameraThread(cameraWidgets *parent=0) {mWidgets = parent;}
-	~OpenCameraThread(){}
+    ~OpenCameraThread(){qDebug() << "~OpenCameraThread()";}
 
 	void run() {
         QString result;
         /* expensive or blocking operation  */
 	if (mWidgets)
-		mWidgets->openCamera();
+	    mWidgets->openCamera();
         emit resultReady(result);
     }
 

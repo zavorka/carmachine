@@ -4,6 +4,7 @@ import QtMultimedia 5.0
 Rectangle {
     id:root
     color:"black"
+    opacity: 0
 
     MediaPlayer {
         id:camera
