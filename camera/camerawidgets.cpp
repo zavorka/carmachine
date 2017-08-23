@@ -91,12 +91,31 @@
 #include "camerawidgets.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QStackedLayout>
+#include <QDateTime>
 #include <gst/video/videooverlay.h>
+#include <private/qgstutils_p.h>
 
 QPushButton *cameraWidgets::m_capture;
 QPushButton *cameraWidgets::m_mode;
-QWidget *cameraWidgets::m_frame;
-QCameraViewfinder *cameraWidgets::m_viewfinder;
+QComboBox *cameraWidgets::m_camerasbox;
+QComboBox *cameraWidgets::m_previewsizesbox;
+cameraWidgets *cameraWidgets::m_cameraWidgets;
+gboolean cameraWidgets::m_camera_error;
+cameraTopWidgets *cameraWidgets::m_topWid;
+gchar *cameraWidgets::videodevice_name;
+QString cameraWidgets::m_location;
+gint cameraWidgets::image_width;
+gint cameraWidgets::image_height;
+gfloat cameraWidgets::view_framerate_num;
+gint cameraWidgets::view_framerate_den;
+gchar *cameraWidgets::image_capture_caps_str;
+gchar *cameraWidgets::viewfinder_caps_str;
+gchar *cameraWidgets::video_capture_caps_str;
+QList<camerainfo> cameraWidgets::m_caminfoList;
+
+int cameraWidgets::m_cam_index;
+int cameraWidgets::m_preview_index;
 
 cameraWidgets::cameraWidgets(QWidget *parent):baseWidget(parent)
 {
@@ -132,9 +151,267 @@ cameraWidgets::~cameraWidgets()
     g_free (performance_targets_str);
 }
 
+int cameraWidgets::getCameraInfos(struct rk_cams_dev_info* cam_infos) {
+   int ret = 0, i = 0, j = 0, fd;
+   char video_dev_path[15];
+   struct v4l2_capability capability;
+   v4l2_input input;
+   camerainfo caminfo;
+   for (i = 0; i < RK_ENUM_VIDEO_NUM_MAX; i++) {
+     int video_node_num;
+     int video_node_input_num;
+     struct rk_cam_video_node* node;
+     video_dev_path[0] = 0;
+     snprintf(video_dev_path, sizeof(video_dev_path), "/dev/video%d", i);
+     fd = open(video_dev_path, O_RDONLY);
+     if (fd < 0) {
+       qDebug() << "Open " << video_dev_path << " failed! strr:" << strerror(errno);
+       continue;
+     }
+ 
+     qDebug() << "open " << video_dev_path << " sucess!";
+     memset(&capability, 0, sizeof(struct v4l2_capability));
+     if (ioctl(fd, VIDIOC_QUERYCAP, &capability) < 0) {
+       qDebug() << "Video device(" << video_dev_path << "): query capability not supported.";
+       ::close(fd);
+       continue;
+     }
+     qDebug() << "driver:" << (char*)(capability.driver);
+     if (strstr((char*)(capability.driver), "rkisp")) {
+       struct rk_isp_dev_info* isp_dev = &cam_infos->isp_dev;
+       video_node_num = isp_dev->isp_dev_node_nums;
+       //isp dev
+       if ((strstr((char*)(capability.card), "self"))
+           || (strstr((char*)(capability.card), "main"))
+           || (strstr((char*)(capability.card), "ispdev"))
+           || (strstr((char*)(capability.card), "y12"))
+           || strstr((char*)(capability.card), "dma")) {
+         node = &(isp_dev->video_nodes[video_node_num]);
+         node->video_index = i;
+         strncpy(node->card, (char*)(capability.card), strlen((char*)(capability.card)));
+         qDebug() << "isp CARD " << node->card;
+         for (j = 0; j < RK_CAM_ATTRACED_INUPUT_MAX; j++) {
+           video_node_input_num = node->input_nums;
+           input.index = j;
+           if (ioctl(fd, VIDIOC_ENUMINPUT, &input) == 0) {
+             node->input[video_node_input_num].index = j;
+             node->input[video_node_input_num].dev = node;
+             node->input[video_node_input_num].type = RK_CAM_ATTACHED_TO_ISP;
+             if (strstr((char*)(input.name), "DMA"))
+               strncpy(node->input[video_node_input_num].name,
+                       (char*)(input.name), strlen((char*)(input.name)));
+             else {
+               // sensor name
+               strcpy(node->input[video_node_input_num].name,
+                      strtok((char*)(input.name), " "));
+              //only involve once
+               if (strstr((char*)(capability.card), "self")) {
+                 cam_infos->cam[cam_infos->num_camers] =
+                     &(node->input[video_node_input_num]);
+                 cam_infos->num_camers++;
+                 caminfo.video_index = i;
+                 caminfo.cam = node->input[video_node_input_num];
+                 m_caminfoList.append(caminfo);
+               }
+             }
+             qDebug() << "input name " << node->input[video_node_input_num].name << ", id " << j;
+           } else
+             break;
+           node->input_nums++;
+         }
+         isp_dev->isp_dev_node_nums++;
+       }
+    } else if (strstr((char*)(capability.driver), "cif")) {                       
+        //cif dev
+        struct rk_cif_dev_infos* cifs = &cam_infos->cif_devs;
+        video_node_num = cifs->cif_dev_node_nums;
+        struct rk_cam_video_node* node = &(cifs->cif_devs[video_node_num].video_node);
+        cifs->cif_devs[video_node_num].cif_index = video_node_num;
+        node->video_index = i;
+        strncpy(node->card, (char*)(capability.card), strlen((char*)(capability.card)));
+        qDebug() << "cif CARD " << node->card;
+        for (j = 0; j < RK_CAM_ATTRACED_INUPUT_MAX; j++) {
+            video_node_input_num = node->input_nums;
+            input.index = j;
+            if (ioctl(fd, VIDIOC_ENUMINPUT, &input) == 0) {
+                node->input[video_node_input_num].index = j;
+                node->input[video_node_input_num].dev = &(cifs->cif_devs[video_node_num]);
+                node->input[video_node_input_num].type = RK_CAM_ATTACHED_TO_CIF;
+                strncpy(node->input[video_node_input_num].name,
+                    (char*)(input.name), strlen((char*)(input.name)));
+                cam_infos->cam[cam_infos->num_camers] =
+                    &(node->input[video_node_input_num]);
+                cam_infos->num_camers++;
+                qDebug() << "input name " << node->input[video_node_input_num].name << ",id " << j;
+            } else
+                break;
+                node->input_nums++;
+        }
+        cifs->cif_dev_node_nums++;
+    } else if (strstr((char*)(capability.driver), "uvc")) {
+        //usb dev
+        struct rk_usb_cam_dev_infos* usb_cams = &cam_infos->usb_devs;
+        video_node_num = usb_cams->usb_dev_node_nums;
+        struct rk_cam_video_node* node = &(usb_cams->video_nodes[video_node_num]);
+        node->video_index = i;
+        strncpy(node->card, (char*)(capability.card), strlen((char*)(capability.card)));
+        qDebug() << "uvc CARD " << node->card;
+        for (j = 0; j < RK_CAM_ATTRACED_INUPUT_MAX; j++) {
+            video_node_input_num = node->input_nums;
+            input.index = j;
+            if (ioctl(fd, VIDIOC_ENUMINPUT, &input) == 0) {
+                node->input[video_node_input_num].index = j;
+                node->input[video_node_input_num].dev = node;
+                node->input[video_node_input_num].type = RK_CAM_ATTACHED_TO_USB;
+                strncpy(node->input[video_node_input_num].name,
+                    (char*)(input.name), strlen((char*)(input.name)));
+                cam_infos->cam[cam_infos->num_camers] =
+                    &(node->input[video_node_input_num]);
+                cam_infos->num_camers++;
+                caminfo.video_index = i;
+                caminfo.cam = node->input[video_node_input_num];
+                m_caminfoList.append(caminfo);
+                qDebug() << "input name " << node->input[video_node_input_num].name << ",id " << j;
+            } else
+                break;
+            node->input_nums++;
+        }
+        usb_cams->usb_dev_node_nums++;
+    } else {
+        ::close(fd);
+        continue;
+    }
+    ::close(fd);   
+  }
+  qDebug() << "connected  camera nums " << cam_infos->num_camers;
+  for (i = 0; i < cam_infos->num_camers; i++)
+    qDebug() << "cam name " << cam_infos->cam[i]->name << ",connect to controller type " << cam_infos->cam[i]->type 
+    << ",input index " << cam_infos->cam[i]->index;
+  return ret;                                                                                            
+}
+
+void cameraWidgets::updateSupportedViewfinderSettings() {
+    m_supportedViewfinderSettings.clear();
+
+    GstCaps *supportedCaps = this->supportedCaps(mode);
+
+    // Convert caps to QCameraViewfinderSettings
+    if (supportedCaps) {
+        supportedCaps = qt_gst_caps_normalize(supportedCaps);
+
+        for (uint i = 0; i < gst_caps_get_size(supportedCaps); i++) {
+            const GstStructure *structure = gst_caps_get_structure(supportedCaps, i);
+
+            QCameraViewfinderSettings s;
+            s.setResolution(QGstUtils::structureResolution(structure));
+            s.setPixelFormat(QGstUtils::structurePixelFormat(structure));
+            s.setPixelAspectRatio(QGstUtils::structurePixelAspectRatio(structure));
+
+            QPair<qreal, qreal> frameRateRange = QGstUtils::structureFrameRateRange(structure);
+            s.setMinimumFrameRate(frameRateRange.first);
+            s.setMaximumFrameRate(frameRateRange.second);
+
+            if (!s.resolution().isEmpty()
+                    && s.pixelFormat() != QVideoFrame::Format_Invalid
+                    && !m_supportedViewfinderSettings.contains(s)) {
+
+                m_supportedViewfinderSettings.append(s);
+                qDebug() << "support ViewfinderSetting===" << "Resolution:" << s.resolution()
+                    << ",PixelFormat:" << s.pixelFormat() << ",PixelAspectRatio:"
+                    << s.pixelAspectRatio() << ",framerate:" << s.maximumFrameRate() << "/"
+                    << s.minimumFrameRate();
+            }
+        }
+        qDebug() << "support ViewfinderSetting size:" << m_supportedViewfinderSettings.size();
+
+        if (m_supportedViewfinderSettings.size() == 0
+                && !strcmp(m_caminfoList.at(m_cam_index).cam.name, "tc358749xbg")) {
+            //hdmi in, support 1080p60fps, 720p60fps
+            qDebug() << "hdmi in camera ViewfinderSettings";
+            QCameraViewfinderSettings s;
+            s.setResolution(1920, 1080);
+            s.setPixelFormat(QVideoFrame::Format_YUYV);
+            s.setPixelAspectRatio(QSize(1, 1));
+
+            s.setMinimumFrameRate(60.0f);
+            s.setMaximumFrameRate(60.0f);
+            m_supportedViewfinderSettings.append(s);
+
+            /*s.setResolution(1280, 720);
+            s.setPixelFormat(QVideoFrame::Format_YUYV);
+            s.setPixelAspectRatio(QSize(1, 1));
+
+            s.setMinimumFrameRate(60.0f);
+            s.setMaximumFrameRate(60.0f);
+            m_supportedViewfinderSettings.append(s);*/
+        }
+        gst_caps_unref(supportedCaps);
+    }
+}
+
+GstCaps *cameraWidgets::supportedCaps(int mode) const
+{
+    GstCaps *supportedCaps = 0;
+
+    // When using wrappercamerabinsrc, get the supported caps directly from the video source element.
+    // This makes sure we only get the caps actually supported by the video source element.
+    if (m_videoSrc) {
+        GstPad *pad = gst_element_get_static_pad(m_videoSrc, "src");
+        if (pad) {
+            supportedCaps = qt_gst_pad_get_caps(pad);
+            gst_object_unref(GST_OBJECT(pad));
+        }
+    }
+
+    // Otherwise, let the camerabin handle this.
+    if (!supportedCaps) {
+        const gchar *prop;
+        switch (mode) {
+        case MODE_IMAGE:
+            prop = SUPPORTED_IMAGE_CAPTURE_CAPS_PROPERTY;
+            break;
+        case MODE_VIDEO:
+            prop = SUPPORTED_VIDEO_CAPTURE_CAPS_PROPERTY;
+            break;
+        case MODE_VIEWFINDER:
+        default:
+            prop = SUPPORTED_VIEWFINDER_CAPS_PROPERTY;
+            break;
+        }
+
+        g_object_get(G_OBJECT(camerabin), prop, &supportedCaps, NULL);
+    }
+
+    return supportedCaps;
+}
+
+bool compare(const camerainfo info0, const camerainfo info1) {
+    if (info0.cam.type > info1.cam.type) {
+        return true;
+    } if (info0.cam.type == info1.cam.type) {
+        if (info0.video_index > info1.video_index)
+            return false;
+        else
+            return true;
+    } else {
+        return false;
+    }
+}
+
 void cameraWidgets::showEvent(QShowEvent *event) {
-    qDebug() << "cameraWidgets::showEvent~~~~~~~~~~~";
-    //openCamera();
+    qDebug() << "cameraWidgets::showEvent";
+    m_topWid->m_title->setText(QString("opening camera(%1)").arg(videodevice_name));
+    m_caminfoList.clear();
+
+    mode = MODE_IMAGE;
+    updateCamerabarStatus(false);
+    memset(&g_cam_infos, 0, sizeof(g_cam_infos));
+    getCameraInfos(&g_cam_infos);
+    qSort(m_caminfoList.begin(), m_caminfoList.end(), compare);
+    updateCamerasBox();
+
+    if (m_caminfoList.size() == 0) return;
+
     OpenCameraThread *workerThread = new OpenCameraThread(this);
     connect(workerThread, SIGNAL(resultReady(QString)), this, SLOT(handleResults(QString)));
     connect(workerThread, SIGNAL(finished()), workerThread, SLOT(deleteLater()));
@@ -148,12 +425,13 @@ void cameraWidgets::openCamera()
 {
     qDebug() << "openCamera start";
     
-    gst_debug_set_default_threshold(GST_LEVEL_FIXME);
-    gst_debug_set_threshold_for_name ("camerabin", GST_LEVEL_DEBUG);
+    gst_debug_set_default_threshold(GST_LEVEL_ERROR);
+    gst_debug_set_threshold_for_name ("camerabin", GST_LEVEL_ERROR);
+    gst_debug_set_threshold_for_name ("kmssink", GST_LEVEL_DEBUG);
 
-    mode == MODE_IMAGE;
     recording = FALSE;
     ready_for_capture = FALSE;
+    m_camera_error = FALSE;
 
     if (setup_pipeline()) {
         g_idle_add ((GSourceFunc) run_preview_pipeline, NULL);
@@ -164,16 +442,10 @@ void cameraWidgets::openCamera()
 void cameraWidgets::closeCamera()
 {
     cleanup_pipeline ();
-
-    /* performance */
-    if (performance_measure) {
-        print_performance_data ();
-    }
-}   
-
-void cameraWidgets::slot_cameraerror(QCamera::Error value)
-{
-    qDebug() << "camera error:" << value;
+    m_preview_index = 0;
+    m_cam_index = 0;
+    updateCamerabarStatus(true);
+    stop_timer_count();
 }
 
 void cameraWidgets::slot_pressed()
@@ -187,38 +459,23 @@ void cameraWidgets::slot_released()
     qDebug() << "capture btn released";
 }
 
-void cameraWidgets::slot_captureerror(int id, QCameraImageCapture::Error error, const QString &errorString)
-{
-    qDebug() << "id:" << id << " capture error:" << errorString;
-}
-
-void cameraWidgets::readyForCapture(bool ready)
-{
-    qDebug() << "readyForCapture:" << ready;
-}
-
-void cameraWidgets::processCapturedImage(int requestId,const QImage & img)
-{
-    qDebug() << requestId << " processCapturedImage: " << img;
-}
-
-void cameraWidgets::imageSaved(int id,const QString & filename)
-{
-    qDebug() << id << "imageSaved = " << filename;
-}
-
 void cameraWidgets::slot_capture()
 {
     qDebug() << "capture btn clicked";
     if (mode == MODE_IMAGE || (mode == MODE_VIDEO && !recording)) {
         if (camerabin && ready_for_capture) {
             qDebug() << "start " << (mode == MODE_IMAGE ? "capture" : "recorder");
+            m_topWid->m_title->setText(mode == MODE_IMAGE ? "capturing" : "recording");
+            updateCamerabarStatus(false);
             g_idle_add ((GSourceFunc) run_taking_pipeline, NULL);                 
         }
     } else {
         qDebug() << "stop recorder";
-        if (camerabin)
+        if (camerabin && recording) {
+            stop_timer_count();
+            updateCamerabarStatus(false);
             stop_capture(NULL);
+        }
     }
 }
 
@@ -228,35 +485,69 @@ void cameraWidgets::slot_modeswitch()
     switchMode();
 }
 
-void cameraWidgets::updateRecorderState(QMediaRecorder::State state)
-{
-    switch (state) {
-    case QMediaRecorder::StoppedState:
-        //m_recorder->setText("start recorder");
-        break;
-    case QMediaRecorder::PausedState:
-        //m_recorder->setText("start recorder");
-        break;
-    case QMediaRecorder::RecordingState:
-        //m_recorder->setText("stop recorder");
-        break;
-    }
-}
-
 void cameraWidgets::updateRecordTime()
 {
-    qDebug() << "Recorded " << m_mediaRecorder->duration()/1000 << " sec";
-    qDebug() << "Recorded format:" << m_mediaRecorder->containerFormat();
-    qDebug() << "Recorded videoSettings:"  << m_mediaRecorder->videoSettings().codec();
-}
+    m_recorder_time++;
+    time_t t;
+    struct tm *p;
+    t = m_recorder_time;
+    p = gmtime(&t);
+    char s[10];
+    strftime(s, sizeof(s), "%H:%M:%S", p);
+    qDebug() << "updateRecordTime:" << s;
 
-void cameraWidgets::displayRecorderError()
-{
-    qDebug() << "Capture error:" << m_mediaRecorder->errorString();
+    m_record_time->setText(s);
 }
 
 void cameraWidgets::handleResults(const QString &) {
     qDebug() << "Thread run over";
+}
+
+void cameraWidgets::slot_camera_error (QString error)
+{
+    qDebug() << "slot_camera_error:" << error;
+
+    m_topWid->m_title->setText(QString("camera error:%1").arg(error));
+    updateCamerabarStatus(false);
+    m_topWid->m_btnreturn->setEnabled(true);
+    stop_timer_count();
+}
+
+void cameraWidgets::slot_capture_done(QString location) {
+    qDebug() << "slot_capture_done:" << location;
+    m_topWid->m_title->setText(QString("capture %1").arg(location));
+    updateCamerabarStatus(true);
+    if (mode == MODE_VIDEO && ready_for_capture) {
+        recording = FALSE;
+        m_capture->setText("start Recorder");
+    }
+}
+
+void cameraWidgets::slot_camera_changed(int index) {
+    qDebug() << "camera changed index:" << index;
+    if (index >= 0 && index != m_cam_index) {
+        cleanup_pipeline();
+        m_preview_index = 0;
+        m_cam_index = index;
+        mode = MODE_IMAGE;
+        updateCamerabarStatus(true);
+        openCamera();
+    }
+}
+
+void cameraWidgets::slot_previewsize_changed(int index) {
+    qDebug() << "previewsize changed index:" << index;
+    if (index >= 0 && index != m_preview_index) {
+        if (!strcmp(m_caminfoList.at(m_cam_index).cam.name, "tc358749xbg")) {
+            cleanup_pipeline();
+            m_preview_index = index;
+            openCamera();
+        } else {
+			m_preview_index = index;
+            updateCameraParameter();
+            g_idle_add ((GSourceFunc) run_preview_pipeline, NULL);
+        }
+    }
 }
 
 GstPadProbeReturn
@@ -297,15 +588,17 @@ cameraWidgets::sync_bus_callback (GstBus * bus, GstMessage * message, gpointer d
     case GST_MESSAGE_ELEMENT:{
       st = gst_message_get_structure (message);
       if (st) {
+         //if (!gst_structure_has_name (st, "preview-image"))
+         //   qDebug() << "gst_structure:" << gst_structure_to_string(st);
          if (gst_message_has_name (message, "prepare-window-handle")) {
             GST_FIXME ("prepare-window-handle");
-            if (viewfinder_sink && GST_IS_VIDEO_OVERLAY(viewfinder_sink)) {
-                m_winid = m_frame->winId();
-                qDebug() << "===m_viewfinder winid:" << m_winid;
-                //gst_video_overlay_set_window_handle(GST_VIDEO_OVERLAY(viewfinder_sink), m_winid);
-            }
-         } else if (gst_message_has_name (message, "prepare-xwindow-id")) {
-            GST_FIXME ("prepare-xwindow-id");
+         } else if (gst_structure_has_name (st, "image-done")) {
+            const gchar *filename = gst_structure_get_string(st, "filename");
+            qDebug() << "image-done:" << QString("%1").arg(filename);
+            emit m_cameraWidgets->sig_capture_done(QString("%1").arg(filename));
+         } else if (gst_structure_has_name (st, "video-done")) {
+             qDebug() << "video-done:" << m_location;
+             emit m_cameraWidgets->sig_capture_done(m_location);
          } else if (gst_structure_has_name (st, "preview-image")) {
             CaptureTiming *timing;
 
@@ -351,6 +644,7 @@ cameraWidgets::sync_bus_callback (GstBus * bus, GstMessage * message, gpointer d
         }
       }
       break;
+    }
     case GST_MESSAGE_STATE_CHANGED:
       if (GST_MESSAGE_SRC (message) == (GstObject *) camerabin) {
         GstState newstate;
@@ -361,6 +655,23 @@ cameraWidgets::sync_bus_callback (GstBus * bus, GstMessage * message, gpointer d
         }
       }
       break;
+    case GST_MESSAGE_ERROR:{
+      GST_FIXME ("GST_MESSAGE_ERROR in sync_bus_callback");
+      GError *err = NULL;
+      gchar *dbg_info = NULL;
+
+      gst_message_parse_error (message, &err, &dbg_info);
+      g_printerr ("ERROR from element %s: %s\n",
+           GST_OBJECT_NAME (message->src), err->message);
+      g_printerr ("Debugging info: %s\n", (dbg_info) ? dbg_info : "none");
+
+      m_camera_error = true;
+      ready_for_capture = false;
+      if(m_cameraWidgets){
+        emit m_cameraWidgets->sig_camera_error(QString("%1").arg(err->message));
+      }
+      g_error_free (err);
+      g_free (dbg_info);
     }
     default:
       /* unhandled message */
@@ -371,6 +682,7 @@ cameraWidgets::sync_bus_callback (GstBus * bus, GstMessage * message, gpointer d
 
 gboolean cameraWidgets::bus_callback (GstBus * bus, GstMessage * message, gpointer data)
 {
+  qDebug() << "bus_callback:" << GST_MESSAGE_SRC_NAME (message);
   switch (GST_MESSAGE_TYPE (message)) {
     case GST_MESSAGE_ERROR:{
       GError *err;
@@ -433,18 +745,17 @@ gboolean cameraWidgets::bus_callback (GstBus * bus, GstMessage * message, gpoint
 }
 
 void cameraWidgets::switchMode() {
-    cleanup_pipeline();
+    //cleanup_pipeline();
     mode = mode == MODE_IMAGE ? MODE_VIDEO : MODE_IMAGE;
-    if (setup_pipeline()) {
-        g_idle_add ((GSourceFunc) run_preview_pipeline, NULL);
-    }
+    m_topWid->m_title->setText(QString("switch to %1").arg(mode == MODE_IMAGE ? "VIDEO MODE" : "IMAGE MODE"));
+    updateCamerabarStatus(false);
+
+    g_idle_add ((GSourceFunc) run_preview_pipeline, NULL);
 }
 
 void cameraWidgets::cleanup_pipeline (void)
 {
   if (camerabin) {
-    //if (m_viewfinderInterface)
-    //    m_viewfinderInterface->stopRenderer();
     GST_FIXME_OBJECT (camerabin, "stopping and destroying");
     GstElement *camera_source = NULL;
     g_object_get (camerabin, "camera-source", &camera_source, NULL);
@@ -627,9 +938,6 @@ gboolean cameraWidgets::setup_pipeline (void)
     goto error;
   }
 
-  //key_control = g_io_channel_unix_new (fileno (stdin));
-  //g_io_add_watch (key_control, G_IO_IN, (GIOFunc) keypress, NULL);
-
   bus = gst_pipeline_get_bus (GST_PIPELINE (camerabin));
   /* Add sync handler for time critical messages that need to be handled fast */
   gst_bus_set_sync_handler (bus, sync_bus_callback, NULL, NULL);
@@ -646,7 +954,6 @@ gboolean cameraWidgets::setup_pipeline (void)
 
   if (videosrc_name) {
     GstElement *wrapper;
-    GstElement *videosrc;
 
     if (wrappersrc_name)
       wrapper = gst_element_factory_make (wrappersrc_name, NULL);
@@ -660,13 +967,15 @@ gboolean cameraWidgets::setup_pipeline (void)
       GST_WARNING ("Failed to set videosrc to %s", videosrc_name);
     }
 
-    g_object_get (wrapper, "video-source", &videosrc, NULL);
+    g_object_get (wrapper, "video-source", &m_videoSrc, NULL);
+    videodevice_name = g_strdup_printf ("/dev/video%d", m_caminfoList.at(m_cam_index).video_index);
     if (videodevice_name == NULL)
       videodevice_name = g_strdup("/dev/video0");
-    if (videosrc && videodevice_name &&
-        g_object_class_find_property (G_OBJECT_GET_CLASS (videosrc),
+    g_warning ("opening %s\n", videodevice_name);
+    if (m_videoSrc && videodevice_name &&
+        g_object_class_find_property (G_OBJECT_GET_CLASS (m_videoSrc),
             "device")) {
-      g_object_set (videosrc, "device", videodevice_name, NULL);
+      g_object_set (m_videoSrc, "device", videodevice_name, NULL);
     }
   }
 
@@ -712,12 +1021,68 @@ gboolean cameraWidgets::setup_pipeline (void)
   }
   viewfinder_sink = sink;
 
-  qDebug() << "=======GST_IS_VIDEO_OVERLAY:" << GST_IS_VIDEO_OVERLAY(viewfinder_sink);
-
   GST_FIXME_OBJECT (camerabin, "elements configured");
 
+  if (GST_STATE_CHANGE_FAILURE ==
+      gst_element_set_state (camerabin, GST_STATE_READY)) {
+    g_warning ("can't set camerabin to ready\n");
+    emit m_cameraWidgets->sig_camera_error(QString("can't set camerabin to ready"));
+    goto error;
+  }
+  GST_FIXME_OBJECT (camerabin, "camera ready");
+
+  if (!strcmp(m_caminfoList.at(m_cam_index).cam.name, "tc358749xbg")) {
+      qDebug() << "hdmi in need setparameter before camerabin playing";
+      updateSupportedViewfinderSettings();
+      updateCameraParameter();
+      if (image_width > 0 && image_height > 0) {
+          if (mode == MODE_VIDEO) {
+            GstCaps *caps = NULL;
+            if (view_framerate_num > 0)
+              caps = gst_caps_new_full (gst_structure_new ("video/x-raw",
+                      "width", G_TYPE_INT, image_width,
+                      "height", G_TYPE_INT, image_height,
+                      "framerate", GST_TYPE_FRACTION, view_framerate_num,
+                      view_framerate_den, NULL), NULL);
+            else
+              caps = gst_caps_new_full (gst_structure_new ("video/x-raw",
+                      "width", G_TYPE_INT, image_width,
+                      "height", G_TYPE_INT, image_height, NULL), NULL);
+
+            g_object_set (camerabin, "video-capture-caps", caps, NULL);
+            gst_caps_unref (caps);
+          } else {
+            GstCaps *caps = gst_caps_new_full (gst_structure_new ("video/x-raw",
+                    "width", G_TYPE_INT, image_width,
+                    "height", G_TYPE_INT, image_height, NULL), NULL);
+
+            g_object_set (camerabin, "image-capture-caps", caps, NULL);
+            gst_caps_unref (caps);
+          }
+      }
+
+      set_camerabin_caps_from_string ();
+  }
+
+  if (GST_STATE_CHANGE_FAILURE ==
+      gst_element_set_state (camerabin, GST_STATE_PLAYING)) {
+    g_warning ("can't set camerabin to playing\n");
+    emit m_cameraWidgets->sig_camera_error(QString("can't set camerabin to playing"));
+    goto error;
+  }
+
+  GST_FIXME_OBJECT (camerabin, "camera started");
+
+  g_object_get (camerabin, "idle", &idle, NULL);
+
+  qDebug() << "camera idle:" << idle;
+
+  updateSupportedViewfinderSettings();
+  updatePreviewSizesBox();
+  updateCameraParameter();
+
   /* configure a resolution and framerate */
-  if (image_width > 0 && image_height > 0) {
+  /*if (image_width > 0 && image_height > 0) {
     if (mode == MODE_VIDEO) {
       GstCaps *caps = NULL;
       if (view_framerate_num > 0)
@@ -743,18 +1108,12 @@ gboolean cameraWidgets::setup_pipeline (void)
     }
   }
 
-  set_camerabin_caps_from_string ();
+  set_camerabin_caps_from_string ();*/
 
-  /* change to the wrong mode if timestamping if performance mode is on so
-   * we can change it back and measure the time after in playing */
-  if (performance_measure) {
-    g_object_set (camerabin, "mode",
-        mode == MODE_VIDEO ? MODE_IMAGE : MODE_VIDEO, NULL);
-  }
-
-  if (GST_STATE_CHANGE_FAILURE ==
+  /*if (GST_STATE_CHANGE_FAILURE ==
       gst_element_set_state (camerabin, GST_STATE_READY)) {
     g_warning ("can't set camerabin to ready\n");
+    emit m_cameraWidgets->sig_camera_error(QString("can't set camerabin to ready"));
     goto error;
   }
   GST_FIXME_OBJECT (camerabin, "camera ready");
@@ -762,6 +1121,7 @@ gboolean cameraWidgets::setup_pipeline (void)
   if (GST_STATE_CHANGE_FAILURE ==
       gst_element_set_state (camerabin, GST_STATE_PLAYING)) {
     g_warning ("can't set camerabin to playing\n");
+    emit m_cameraWidgets->sig_camera_error(QString("can't set camerabin to playing"));
     goto error;
   }
 
@@ -769,22 +1129,15 @@ gboolean cameraWidgets::setup_pipeline (void)
 
   g_object_get (camerabin, "idle", &idle, NULL);
   
-  qDebug() << "camera idle:" << idle;
+  qDebug() << "camera idle:" << idle;*/
 
-  g_object_get (camerabin, "camera-source", &camera_source, NULL);
+  /*g_object_get (camerabin, "camera-source", &camera_source, NULL);
   if (camera_source) {
     ready_for_capture_id = g_signal_connect(camera_source, "notify::ready-for-capture",
       (GCallback) notify_readyforcapture, camera_source);
     g_object_get (camera_source, "ready-for-capture", &ready_for_capture, NULL);
     qDebug() << "ready_for_capture_id:" << ready_for_capture_id << ",ready for captrue:" << ready_for_capture;
-  }
-
-  /* do the mode change timestamping if performance mode is on */
-  if (performance_measure) {
-    change_mode_before = gst_util_get_timestamp ();
-    g_object_set (camerabin, "mode", mode, NULL);
-    change_mode_after = gst_util_get_timestamp ();
-  }
+  }*/
 
   return TRUE;
 error:
@@ -826,10 +1179,12 @@ cameraWidgets::stop_capture (gpointer user_data)
 void cameraWidgets::notify_readyforcapture(GObject * obj,GParamSpec * pspec,gpointer user_data) {
     g_object_get (obj, "ready-for-capture", &ready_for_capture, NULL);
         qDebug() << "notify_readyforcapture:" << ready_for_capture;
-    if (mode == MODE_VIDEO && ready_for_capture) {
+    /*if (mode == MODE_VIDEO && ready_for_capture
+            && !strcmp(m_caminfoList.at(m_cam_index).cam.name, "tc358749xbg")) {
+        //hdmi in record video only get ready-for-capture signal,so change state here.
         recording = FALSE;
-        m_capture->setText("start Recorder");
-    }
+        emit m_cameraWidgets->sig_capture_done(m_location);
+    }*/
 }
 
 void cameraWidgets::set_metadata (GstElement * camera)
@@ -868,10 +1223,14 @@ gboolean cameraWidgets::run_taking_pipeline (gpointer user_data)
     filename_suffix = ".mp4";
   else
     filename_suffix = ".jpg";
+  QDateTime current_date_time = QDateTime::currentDateTime();
+  QString current_date = current_date_time.toString("yyyyMMddhhmmss");
+  qDebug() << current_date.toStdString().c_str();
   filename_str =
-      g_strdup_printf ("%s/test_%04u%s", filename->str, capture_count,
+      g_strdup_printf ("%s/cam_%s%s", filename->str, current_date.toStdString().c_str(),
       filename_suffix);
   GST_FIXME ("Setting filename: %s", filename_str);
+  m_location = QString("%1").arg(filename_str);
   g_object_set (camerabin, "location", filename_str, NULL);
   g_free (filename_str);
 
@@ -923,9 +1282,11 @@ gboolean cameraWidgets::run_taking_pipeline (gpointer user_data)
   g_signal_emit_by_name (camerabin, "start-capture", 0);
 
   if (mode == MODE_VIDEO) {
+    qDebug() << "update recorder ui";
     recording = TRUE;
+    m_capture->setEnabled(true);
     m_capture->setText("stop Recorder");
-    //g_timeout_add ((capture_time * 1000), (GSourceFunc) stop_capture, NULL);
+    m_cameraWidgets->start_timer_count();
   }
 
 
@@ -935,6 +1296,47 @@ gboolean cameraWidgets::run_taking_pipeline (gpointer user_data)
 gboolean cameraWidgets::run_preview_pipeline (gpointer user_data)
 {
   qDebug() << "run_preview_pipeline";
+  GstElement *camera_source = NULL;
+  if (strcmp(m_caminfoList.at(m_cam_index).cam.name, "tc358749xbg")) {
+      /* configure a resolution and framerate */
+      if (image_width > 0 && image_height > 0) {
+        if (mode == MODE_VIDEO) {
+          GstCaps *caps = NULL;
+          if (view_framerate_num > 0)
+            caps = gst_caps_new_full (gst_structure_new ("video/x-raw",
+                    "width", G_TYPE_INT, image_width,
+                    "height", G_TYPE_INT, image_height,
+                    "framerate", GST_TYPE_FRACTION, view_framerate_num,
+                    view_framerate_den, NULL), NULL);
+          else
+            caps = gst_caps_new_full (gst_structure_new ("video/x-raw",
+                    "width", G_TYPE_INT, image_width,
+                    "height", G_TYPE_INT, image_height, NULL), NULL);
+
+          g_object_set (camerabin, "video-capture-caps", caps, NULL);
+          gst_caps_unref (caps);
+        } else {
+          GstCaps *caps = gst_caps_new_full (gst_structure_new ("video/x-raw",
+                  "width", G_TYPE_INT, image_width,
+                  "height", G_TYPE_INT, image_height, NULL), NULL);
+
+          g_object_set (camerabin, "image-capture-caps", caps, NULL);
+          gst_caps_unref (caps);
+        }
+      }
+
+      set_camerabin_caps_from_string ();
+  }
+
+  g_object_get (camerabin, "camera-source", &camera_source, NULL);
+  if (camera_source) {
+    g_signal_handler_disconnect (camera_source, ready_for_capture_id);
+    ready_for_capture_id = g_signal_connect(camera_source, "notify::ready-for-capture",
+      (GCallback) notify_readyforcapture, camera_source);
+    g_object_get (camera_source, "ready-for-capture", &ready_for_capture, NULL);
+    qDebug() << "ready_for_capture_id:" << ready_for_capture_id << ",ready for captrue:" << ready_for_capture;
+  }
+
   GstCaps *preview_caps = NULL;
 
   g_object_set (camerabin, "mode", mode, NULL);
@@ -950,6 +1352,15 @@ gboolean cameraWidgets::run_preview_pipeline (gpointer user_data)
   }
 
   set_metadata (camerabin);
+
+  GST_FIXME ("ready_for_capture=%d, m_camera_error=%d", ready_for_capture, m_camera_error);
+  if(ready_for_capture && !m_camera_error){
+    updateCamerabarStatus(true);
+    m_topWid->m_title->setText(QString("Camera(%1) open success").arg(videodevice_name));
+  } else {
+    updateCamerabarStatus(false);
+    m_topWid->m_title->setText(QString("Camera(%1) open fail").arg(videodevice_name));
+  }
 
   m_capture->setText(mode == MODE_IMAGE ? "Take Picture" : "Start Recorder");
   m_mode->setText(mode == MODE_IMAGE ? "Capture Image Mode" : "Video Recorder Mode");
@@ -1137,54 +1548,103 @@ cameraWidgets::print_performance_data (void)
       TIMEDIFF_ARGS (TIME_DIFF (avg.shot_to_buffer, target_shot_to_buffer)));
 }
 
-bool cameraWidgets::isReady() const
-{
-    //it's possible to use QCamera without any viewfinder attached
-    return TRUE;//!m_viewfinderInterface || m_viewfinderInterface->isReady();
+void cameraWidgets::updateCamerabarStatus(gboolean enable) {
+    m_capture->setEnabled(enable);
+    m_mode->setEnabled(enable);
+    m_camerasbox->setEnabled(enable);
+    m_previewsizesbox->setEnabled(enable);
+    m_topWid->m_btnreturn->setEnabled(enable);
 }
 
-void cameraWidgets::setupViewfinder(QObject * viewfinder) {
-    /*if (m_viewfinderInterface)
-        m_viewfinderInterface->stopRenderer();
+void cameraWidgets::updateCamerasBox() {
+    disconnect(m_camerasbox, SIGNAL(currentIndexChanged(int)), this,
+            SLOT(slot_camera_changed(int)));
+    m_camerasbox->clear();
+    for (int i = 0; i < m_caminfoList.size(); i++) {
+        QString cam_nam = QString(m_caminfoList.at(i).cam.name);
+        m_camerasbox->insertItem(i,QString("%1(/dev/video%2)").arg(cam_nam)
+                                 .arg(m_caminfoList.at(i).video_index));
+    }
+    connect(m_camerasbox, SIGNAL(currentIndexChanged(int)), this,
+            SLOT(slot_camera_changed(int)));
+    qDebug() << "updateCamerasBox end";
+}
 
-    m_viewfinderInterface = qobject_cast<QGstreamerVideoRendererInterface*>(viewfinder);
-    if (!m_viewfinderInterface)
-        viewfinder = 0;
+void cameraWidgets::updatePreviewSizesBox() {
+    disconnect(m_previewsizesbox, SIGNAL(currentIndexChanged(int)), this,
+            SLOT(slot_previewsize_changed(int)));
+    m_previewsizesbox->clear();
+    for (int i = 0; i < m_supportedViewfinderSettings.size(); i++) {
+        QCameraViewfinderSettings setting = m_supportedViewfinderSettings.at(i);
+        QString size = QString("%1x%2").arg(setting.resolution().width())
+                .arg(setting.resolution().height());
+        QString format;
+        QTextStream(&format) << "" << setting.pixelFormat();
+        QString framerate = QString("rate:%1/%2").arg(setting.maximumFrameRate())
+                .arg(setting.minimumFrameRate());
+        QString preview = QString("%1,%2").arg(size).arg(framerate);
+        m_previewsizesbox->insertItem(i,preview);
+    }
+    m_previewsizesbox->setCurrentIndex(m_preview_index);
+    connect(m_previewsizesbox, SIGNAL(currentIndexChanged(int)), this,
+        SLOT(slot_previewsize_changed(int)));
+    qDebug() << "updatePreviewSizesBox end";
 
-    qDebug() << "viewfinder isReady:" << isReady();
+}
 
-    if (m_viewfinder != viewfinder) {
-        bool oldReady = isReady();
+void cameraWidgets::updateCameraParameter() {
+    if (m_supportedViewfinderSettings.size() == 0) return;
+    qDebug() << "updateCameraParameter m_preview_index:" << m_preview_index
+             << ", m_cam_index:" << m_cam_index;
 
-        if (m_viewfinder) {
-            disconnect(m_viewfinder, SIGNAL(sinkChanged()),
-                       this, SLOT(handleViewfinderChange()));
-            disconnect(m_viewfinder, SIGNAL(readyChanged(bool)),
-                       this, SIGNAL(readyChanged(bool)));
+    view_framerate_num = m_supportedViewfinderSettings.at(m_preview_index).maximumFrameRate();
+    view_framerate_den = 1;
 
-            m_busHelper->removeMessageFilter(m_viewfinder);
-        }
+    int width = m_supportedViewfinderSettings.at(m_preview_index).resolution().width();
+    int height = m_supportedViewfinderSettings.at(m_preview_index).resolution().height();
+    preview_caps_name = g_strdup_printf ("video/x-raw,format=NV12,width=%d,height=%d",
+                                         width, height);
+    videodevice_name = g_strdup_printf ("/dev/video%d", m_caminfoList.at(m_cam_index).video_index);
+    viewfinder_caps_str = g_strdup_printf ("video/x-raw,format=NV12,width=%d,height=%d",
+                                           width, height);
+    image_width = width;
+    image_height = height;
+    qDebug() << "framerate:" << view_framerate_num << "/" << view_framerate_den;
+    qDebug() << "videodevice_name:" << videodevice_name;
+    qDebug() << "viewfinder_caps_str:" << viewfinder_caps_str;
+    qDebug() << "updateCameraParameter end";
+}
 
-        m_viewfinder = viewfinder;
-        m_viewfinderHasChanged = true;
+void cameraWidgets::start_timer_count()
+{
+    if(m_cameraWidgets && m_record_time){
+        m_timer = new QTimer(m_cameraWidgets);
+        m_recorder_time = 0;
+        connect(m_timer, SIGNAL(timeout()), m_cameraWidgets, SLOT(slot_time_out()) );
+        m_timer->start(1000);
+        qDebug() << "start timer";
+        m_record_time->setVisible(true);
+        m_record_time->setText("00:00:00");
+    }
+}
 
-        if (m_viewfinder) {
-            connect(m_viewfinder, SIGNAL(sinkChanged()),
-                       this, SLOT(handleViewfinderChange()));
-            connect(m_viewfinder, SIGNAL(readyChanged(bool)),
-                    this, SIGNAL(readyChanged(bool)));
+void cameraWidgets::stop_timer_count()
+{
+    if(m_timer && m_timer->isActive()){
+      m_timer->stop();
+      qDebug() << "stop timer count";
+      disconnect(m_timer, SIGNAL(timeout()), m_cameraWidgets, SLOT(slot_time_out()));
+      m_record_time->setVisible(false);
+    }
+}
 
-            m_busHelper->installMessageFilter(m_viewfinder);
-        }
-
-        emit viewfinderChanged();
-        if (oldReady != isReady())
-            emit readyChanged(isReady());
-    }*/
+void cameraWidgets::slot_time_out() {
+    updateRecordTime();
 }
 
 void cameraWidgets::init()
 {
+    m_cameraWidgets = this;
     gchar *target_times = NULL;
     gchar *ev_option = NULL;
     gchar *fn_option = NULL;
@@ -1298,47 +1758,87 @@ void cameraWidgets::init()
     preview_caps_name = g_strdup ("video/x-raw,format=NV12,width=640,height=480");
     filename = g_string_new ("/mnt/sdcard");
     videosrc_name = g_strdup ("v4l2src");
+    videodevice_name = g_strdup ("/dev/video0");
     viewfinder_caps_str = g_strdup ("video/x-raw,format=NV12,width=640,height=480");
     image_width = 640;
     image_height = 480;
     
-    m_capture = new QPushButton(mode == MODE_IMAGE ? "Take Picture" : "start Recorder", this);
-    //m_capture->setFixedSize(300, 100);
+    m_capture = new QPushButton(mode == MODE_IMAGE ? "Take Picture" 
+        : "start Recorder", this);
+    m_capture->setStyleSheet("QPushButton{background-color:rgba(190,190,190,1);}");
 
-    m_mode = new QPushButton(mode == MODE_IMAGE ? "Capture Image Mode" : "Video Recorder Mode", this);
-    //m_mode->setFixedSize(300, 100);
+    m_mode = new QPushButton(mode == MODE_IMAGE ? "Capture Image Mode" 
+        : "Video Recorder Mode", this);
+    m_mode->setStyleSheet("QPushButton{background-color:rgba(190,190,190,1);}");
 
     m_previewWid = new cameraPreviewwidgets(this);
-    //m_leftWid->setFixedSize(640, 480);
-    
+
+    m_camerasbox = new QComboBox;
+    m_camerasbox->setStyleSheet("QComboBox::drop-down {width:100px;}"
+                                "QComboBox{background-color:rgba(190,190,190,1);}");
+    m_previewsizesbox = new QComboBox;
+    m_previewsizesbox->setStyleSheet("QComboBox::drop-down {width:100px;}"
+                                     "QComboBox{background-color:rgba(190,190,190,1);}");
 
     connect(m_capture, SIGNAL(released()),this,SLOT(slot_released()));
     connect(m_capture, SIGNAL(clicked()),this,SLOT(slot_capture()));
 
     connect(m_mode, SIGNAL(pressed()),this,SLOT(slot_pressed()));
     connect(m_mode, SIGNAL(clicked()),this,SLOT(slot_modeswitch()));
+
+    connect(this, SIGNAL(sig_camera_error(QString)), this, SLOT(slot_camera_error(QString)));
+    connect(this, SIGNAL(sig_capture_done(QString)), this, SLOT(slot_capture_done(QString)));
 }
 
 void cameraWidgets::initLayout()
 {
-    QVBoxLayout *vmainlyout = new QVBoxLayout;
+    QVBoxLayout  *vmainlyout = new QVBoxLayout;
+    QStackedLayout *stackedLayout = new QStackedLayout;
+    stackedLayout->setStackingMode(QStackedLayout::StackAll);
 
     m_topWid = new cameraTopWidgets(this);
 
-    // 下半部分布局
     QVBoxLayout *hmiddlelyout = new QVBoxLayout;
 
-    hmiddlelyout->addWidget(m_previewWid,1);
+    stackedLayout->addWidget(m_previewWid);
     
-    QHBoxLayout *lyout2 = new QHBoxLayout;
-    lyout2->addWidget(m_capture,1);
-    lyout2->addWidget(m_mode,1);
-    lyout2->setContentsMargins(10,10,10,10);
-    lyout2->setSpacing(10);
-    hmiddlelyout->addLayout(lyout2,0);
+    QHBoxLayout *buttonbar = new QHBoxLayout;
+    buttonbar->addWidget(m_camerasbox,1);
+    buttonbar->addWidget(m_previewsizesbox,1);
+    buttonbar->addWidget(m_capture,1);
+    buttonbar->addWidget(m_mode,1);
+    buttonbar->setContentsMargins(10,10,10,10);
+    buttonbar->setSpacing(10);
 
-    vmainlyout->addWidget(m_topWid,0);
-    vmainlyout->addLayout(hmiddlelyout,1);
+    QHBoxLayout *camerabar = new QHBoxLayout;
+    camerabar->addWidget(m_camerasbox);
+    camerabar->addWidget(m_previewsizesbox);
+    camerabar->setContentsMargins(10,10,10,10);
+    camerabar->setSpacing(10);
+
+    m_record_time = new QLabel(this);
+    m_record_time->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    m_record_time->setStyleSheet("QLabel{color:red;}");
+    QFont font = m_record_time->font();
+    font.setPointSize(15);
+    m_record_time->setFont(font);
+    m_record_time->setVisible(false);
+    
+    hmiddlelyout->addWidget(m_topWid);
+    hmiddlelyout->addWidget(m_record_time);
+    hmiddlelyout->addLayout(buttonbar);
+    hmiddlelyout->setAlignment(m_record_time,Qt::AlignTop | Qt::AlignRight);
+    hmiddlelyout->setAlignment(buttonbar,Qt::AlignBottom);
+    hmiddlelyout->setContentsMargins(0,0,0,0);
+    hmiddlelyout->setSpacing(0);
+
+    QWidget * ui = new QWidget;
+    ui->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    ui->setLayout(hmiddlelyout);
+
+    stackedLayout->addWidget(ui);
+    
+    vmainlyout->addLayout(stackedLayout);
     vmainlyout->setContentsMargins(0,0,0,0);
     vmainlyout->setSpacing(0);
 

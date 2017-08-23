@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       +=  multimedia multimediawidgets quickwidgets bluetooth
+QT       +=  multimedia multimedia-private multimediawidgets quickwidgets bluetooth
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -30,6 +30,7 @@ PKGCONFIG += \
     gstreamer-video-$$GST_VERSION \
     gstreamer-pbutils-$$GST_VERSION
 
+LIBS += -lqgsttools_p
 
 win32 {
   LIBS += -lws2_32 -static
