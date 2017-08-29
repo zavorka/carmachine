@@ -410,7 +410,10 @@ void cameraWidgets::showEvent(QShowEvent *event) {
     qSort(m_caminfoList.begin(), m_caminfoList.end(), compare);
     updateCamerasBox();
 
-    if (m_caminfoList.size() == 0) return;
+    if (m_caminfoList.size() == 0) {
+        m_topWid->m_btnreturn->setEnabled(true);
+        return;
+    }
 
     OpenCameraThread *workerThread = new OpenCameraThread(this);
     connect(workerThread, SIGNAL(resultReady(QString)), this, SLOT(handleResults(QString)));
