@@ -2,7 +2,7 @@
 
 TOP_DIR=$(pwd)
 BUILDROOT_TARGET_PATH=$(pwd)/../../buildroot/output/target/
-QMAKE=$(pwd)/../../buildroot/output/host/usr/bin/qmake
+QMAKE=$(pwd)/../../buildroot/output/host/bin/qmake
 PRODUCT_NAME=`ls ../../device/rockchip/`
 
 #Carmachine have to build different version base on the dpi of hardware board,
