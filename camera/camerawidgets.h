@@ -60,10 +60,10 @@ GST_DEBUG_CATEGORY_STATIC (camerabin_test);
 #define TIMEDIFF_FORMAT "0.6lf"
 
 #define TIME_ARGS(t) \
-        (GST_CLOCK_TIME_IS_VALID (t) && (t) < 99 * GST_SECOND) ? \
-        (gint) ((((GstClockTime)(t)) / GST_SECOND) % 60) : 99, \
-        (GST_CLOCK_TIME_IS_VALID (t) && ((t) < 99 * GST_SECOND)) ? \
-        (guint) (((GstClockTime)(t)) % GST_SECOND) : 999999999
+    (GST_CLOCK_TIME_IS_VALID (t) && (t) < 99 * GST_SECOND) ? \
+    (gint) ((((GstClockTime)(t)) / GST_SECOND) % 60) : 99, \
+    (GST_CLOCK_TIME_IS_VALID (t) && ((t) < 99 * GST_SECOND)) ? \
+    (guint) (((GstClockTime)(t)) % GST_SECOND) : 999999999
 
 #define TIMEDIFF_ARGS(t) (t)
 
@@ -92,56 +92,56 @@ GST_DEBUG_CATEGORY_STATIC (camerabin_test);
 #define COLOR_TONE_MODE_NONE -G_MAXINT
 
 enum RK_CAM_ATTACHED_TO_e {
-	 RK_CAM_ATTACHED_TO_INVALID,
-	 RK_CAM_ATTACHED_TO_ISP,
-	 RK_CAM_ATTACHED_TO_CIF,
-	 RK_CAM_ATTACHED_TO_USB
+    RK_CAM_ATTACHED_TO_INVALID,
+    RK_CAM_ATTACHED_TO_ISP,
+    RK_CAM_ATTACHED_TO_CIF,
+    RK_CAM_ATTACHED_TO_USB
 };
 
 struct rk_cam_video_input_infos {
-   int index;
-   char name[30];
-   void* dev;
-   RK_CAM_ATTACHED_TO_e type;
+    int index;
+    char name[30];
+    void* dev;
+    RK_CAM_ATTACHED_TO_e type;
 };
 
 struct rk_cam_video_node {
-   char card[30]; //
-   int video_index;
-   int input_nums;
-   struct rk_cam_video_input_infos input[RK_CAM_ATTRACED_INUPUT_MAX];
+    char card[30]; //
+    int video_index;
+    int input_nums;
+    struct rk_cam_video_input_infos input[RK_CAM_ATTRACED_INUPUT_MAX];
 };
 
 #define ISP_DEV_VIDEO_NODES_NUM_MAX 5
 struct rk_isp_dev_info {
-	int isp_dev_node_nums;
-	struct rk_cam_video_node video_nodes[ISP_DEV_VIDEO_NODES_NUM_MAX];
+    int isp_dev_node_nums;
+    struct rk_cam_video_node video_nodes[ISP_DEV_VIDEO_NODES_NUM_MAX];
 };
- 
+
 #define CIF_DEV_VIDEO_NODES_NUM_MAX 4
 struct rk_cif_dev_info {
-	int cif_index;
-	struct rk_cam_video_node video_node;
+    int cif_index;
+    struct rk_cam_video_node video_node;
 };
 
 struct rk_cif_dev_infos {
-	int cif_dev_node_nums;
-	struct rk_cif_dev_info cif_devs[CIF_DEV_VIDEO_NODES_NUM_MAX];
+    int cif_dev_node_nums;
+    struct rk_cif_dev_info cif_devs[CIF_DEV_VIDEO_NODES_NUM_MAX];
 };
 
 #define USB_CAM_DEV_VIDEO_NODES_NUM_MAX 2
 struct rk_usb_cam_dev_infos {
-	int usb_dev_node_nums;
-	struct rk_cam_video_node video_nodes[USB_CAM_DEV_VIDEO_NODES_NUM_MAX];
+    int usb_dev_node_nums;
+    struct rk_cam_video_node video_nodes[USB_CAM_DEV_VIDEO_NODES_NUM_MAX];
 };
- 
+
 #define RK_SUPPORTED_CAMERA_NUM_MAX 10
 struct rk_cams_dev_info {
-	int num_camers;
-	struct rk_cam_video_input_infos*  cam[RK_SUPPORTED_CAMERA_NUM_MAX];
-	struct rk_isp_dev_info isp_dev;
-	struct rk_cif_dev_infos cif_devs;
-	struct rk_usb_cam_dev_infos usb_devs;
+    int num_camers;
+    struct rk_cam_video_input_infos*  cam[RK_SUPPORTED_CAMERA_NUM_MAX];
+    struct rk_isp_dev_info isp_dev;
+    struct rk_cif_dev_infos cif_devs;
+    struct rk_usb_cam_dev_infos usb_devs;
 };
 
 typedef struct rk_cam_info {
@@ -152,113 +152,129 @@ typedef struct rk_cam_info {
 
 typedef struct _CaptureTiming
 {
-  GstClockTime start_capture;
-  GstClockTime got_preview;
-  GstClockTime capture_done;
-  GstClockTime precapture;
-  GstClockTime camera_capture;
+    GstClockTime start_capture;
+    GstClockTime got_preview;
+    GstClockTime capture_done;
+    GstClockTime precapture;
+    GstClockTime camera_capture;
 } CaptureTiming;
 
 typedef struct _CaptureTimingStats
 {
-  GstClockTime shot_to_shot;
-  GstClockTime shot_to_save;
-  GstClockTime shot_to_snapshot;
-  GstClockTime preview_to_precapture;
-  GstClockTime shot_to_buffer;
+    GstClockTime shot_to_shot;
+    GstClockTime shot_to_save;
+    GstClockTime shot_to_snapshot;
+    GstClockTime preview_to_precapture;
+    GstClockTime shot_to_buffer;
 } CaptureTimingStats;
 
 static void
 capture_timing_stats_add (CaptureTimingStats * a, CaptureTimingStats * b)
 {
-  a->shot_to_shot += b->shot_to_shot;
-  a->shot_to_snapshot += b->shot_to_snapshot;
-  a->shot_to_save += b->shot_to_save;
-  a->preview_to_precapture += b->preview_to_precapture;
-  a->shot_to_buffer += b->shot_to_buffer;
+    a->shot_to_shot += b->shot_to_shot;
+    a->shot_to_snapshot += b->shot_to_snapshot;
+    a->shot_to_save += b->shot_to_save;
+    a->preview_to_precapture += b->preview_to_precapture;
+    a->shot_to_buffer += b->shot_to_buffer;
 }
 
 static void
 capture_timing_stats_div (CaptureTimingStats * stats, gint div)
 {
-  stats->shot_to_shot /= div;
-  stats->shot_to_snapshot /= div;
-  stats->shot_to_save /= div;
-  stats->preview_to_precapture /= div;
-  stats->shot_to_buffer /= div;
+    stats->shot_to_shot /= div;
+    stats->shot_to_snapshot /= div;
+    stats->shot_to_save /= div;
+    stats->preview_to_precapture /= div;
+    stats->shot_to_buffer /= div;
 }
 
 static GstEncodingProfile *
 create_ogg_profile (void)
 {
-  GstEncodingContainerProfile *container;
-  GstCaps *caps = NULL;
+    GstEncodingContainerProfile *container;
+    GstCaps *caps = NULL;
 
-  caps = gst_caps_new_empty_simple ("application/ogg");
-  container = gst_encoding_container_profile_new ("ogg", NULL, caps, NULL);
-  gst_caps_unref (caps);
+    caps = gst_caps_new_empty_simple ("application/ogg");
+    container = gst_encoding_container_profile_new ("ogg", NULL, caps, NULL);
+    gst_caps_unref (caps);
 
-  caps = gst_caps_new_empty_simple ("video/x-theora");
-  gst_encoding_container_profile_add_profile (container, (GstEncodingProfile *)
-      gst_encoding_video_profile_new (caps, NULL, NULL, 1));
-  gst_caps_unref (caps);
+    caps = gst_caps_new_empty_simple ("video/x-theora");
+    gst_encoding_container_profile_add_profile (container, (GstEncodingProfile *)
+                                                gst_encoding_video_profile_new (caps, NULL, NULL, 1));
+    gst_caps_unref (caps);
 
-  caps = gst_caps_new_empty_simple ("audio/x-vorbis");
-  gst_encoding_container_profile_add_profile (container, (GstEncodingProfile *)
-      gst_encoding_audio_profile_new (caps, NULL, NULL, 1));
-  gst_caps_unref (caps);
+    caps = gst_caps_new_empty_simple ("audio/x-vorbis");
+    gst_encoding_container_profile_add_profile (container, (GstEncodingProfile *)
+                                                gst_encoding_audio_profile_new (caps, NULL, NULL, 1));
+    gst_caps_unref (caps);
 
-  return (GstEncodingProfile *) container;
+    return (GstEncodingProfile *) container;
 }
 
 static GstEncodingProfile *
 create_webm_profile (void)
 {
-  GstEncodingContainerProfile *container;
-  GstCaps *caps = NULL;
+    GstEncodingContainerProfile *container;
+    GstCaps *caps = NULL;
 
-  caps = gst_caps_new_empty_simple ("video/webm");
-  container = gst_encoding_container_profile_new ("webm", NULL, caps, NULL);
-  gst_caps_unref (caps);
+    caps = gst_caps_new_empty_simple ("video/webm");
+    container = gst_encoding_container_profile_new ("webm", NULL, caps, NULL);
+    gst_caps_unref (caps);
 
-  caps = gst_caps_new_empty_simple ("video/x-vp8");
-  gst_encoding_container_profile_add_profile (container, (GstEncodingProfile *)
-      gst_encoding_video_profile_new (caps, NULL, NULL, 1));
-  gst_caps_unref (caps);
+    caps = gst_caps_new_empty_simple ("video/x-vp8");
+    gst_encoding_container_profile_add_profile (container, (GstEncodingProfile *)
+                                                gst_encoding_video_profile_new (caps, NULL, NULL, 1));
+    gst_caps_unref (caps);
 
-  caps = gst_caps_new_empty_simple ("audio/x-vorbis");
-  gst_encoding_container_profile_add_profile (container, (GstEncodingProfile *)
-      gst_encoding_audio_profile_new (caps, NULL, NULL, 1));
-  gst_caps_unref (caps);
+    caps = gst_caps_new_empty_simple ("audio/x-vorbis");
+    gst_encoding_container_profile_add_profile (container, (GstEncodingProfile *)
+                                                gst_encoding_audio_profile_new (caps, NULL, NULL, 1));
+    gst_caps_unref (caps);
 
-  return (GstEncodingProfile *) container;
+    return (GstEncodingProfile *) container;
 }
 
 static GstEncodingProfile *
 create_mp4_profile (void)
 {
-  GstEncodingContainerProfile *container;
-  GstCaps *caps = NULL;
+    GstEncodingContainerProfile *container;
+    GstCaps *caps = NULL;
 
-  caps =
-      gst_caps_new_simple ("video/quicktime", "variant", G_TYPE_STRING, "iso",
-      NULL);
-  container = gst_encoding_container_profile_new ("mp4", NULL, caps, NULL);
-  gst_caps_unref (caps);
+    caps = gst_caps_new_simple ("video/quicktime", "variant", G_TYPE_STRING, "iso", NULL);
+    container = gst_encoding_container_profile_new ("mp4", NULL, caps, NULL);
+    gst_caps_unref (caps);
 
-  caps = gst_caps_new_empty_simple ("video/x-h264");
-  gst_encoding_container_profile_add_profile (container, (GstEncodingProfile *)
-      gst_encoding_video_profile_new (caps, NULL, NULL, 1));
-  gst_caps_unref (caps);
+    caps = gst_caps_new_empty_simple ("video/x-h264");
+    gst_encoding_container_profile_add_profile (container, (GstEncodingProfile *)
+                                                gst_encoding_video_profile_new (caps, NULL, NULL, 1));
+    gst_caps_unref(caps);
 
-  caps = gst_caps_new_simple ("audio/mpeg", "version", G_TYPE_INT, 4, NULL);
-  gst_encoding_container_profile_add_profile (container, (GstEncodingProfile *)
-      gst_encoding_audio_profile_new (caps, NULL, NULL, 1));
-  gst_caps_unref (caps);
+    caps = gst_caps_new_simple ("audio/mpeg", "version", G_TYPE_INT, 4, NULL);
+    gst_encoding_container_profile_add_profile (container,
+                                                (GstEncodingProfile *) gst_encoding_audio_profile_new (caps, NULL, NULL, 1));
+    gst_caps_unref(caps);
 
-  return (GstEncodingProfile *) container;
+    return (GstEncodingProfile *) container;
 }
 
+static GstEncodingProfile *
+create_ts_profile (void)
+{
+    GstEncodingContainerProfile *container;
+    GstCaps *caps = NULL;
+
+    caps = gst_caps_new_simple ("video/mpegts", "systemstream", G_TYPE_BOOLEAN,
+                                TRUE, "packetsize", G_TYPE_INT, 188, NULL);
+    container = gst_encoding_container_profile_new ("ts", NULL, caps, NULL);
+    gst_caps_unref (caps);
+
+    caps = gst_caps_new_empty_simple ("video/x-h264");
+    gst_encoding_container_profile_add_profile (container, (GstEncodingProfile *)
+                                               gst_encoding_video_profile_new (caps, NULL, NULL, 1));
+    gst_caps_unref (caps);
+
+    return (GstEncodingProfile *) container;
+}
 
 #define PRINT_STATS(d,s) g_print ("%02d | %" TIME_FORMAT " | %" \
     TIME_FORMAT "   | %" TIME_FORMAT " | %" TIME_FORMAT \
@@ -289,10 +305,7 @@ static GstClockTime change_mode_after = 0;
 static GList *capture_times = NULL;
 static gchar *preview_caps_name = NULL;
 static GString *filename = NULL;
-
-static gint capture_total = 1;
 static gint capture_time = 10;
-static gint capture_count = 0;
 static gulong stop_capture_cb_id = 0;
 
 static gint mode = MODE_IMAGE;
@@ -317,81 +330,81 @@ class QGstreamerVideoRendererInterface;
 
 class cameraWidgets:public baseWidget
 {
-	Q_OBJECT
+    Q_OBJECT
 public:
     cameraWidgets(QWidget *parent=0);
-	~cameraWidgets();
+    ~cameraWidgets();
 
-	void closeCamera();
-	void openCamera();
+    void closeCamera();
+    void openCamera();
 
     static cameraTopWidgets *m_topWid;
 
 private:
     /*QCamera *m_camera;
     static QCameraViewfinder *m_viewfinder;
-	static QWidget *m_frame;
-	QGstreamerVideoRendererInterface *m_viewfinderInterface;
+        static QWidget *m_frame;
+        QGstreamerVideoRendererInterface *m_viewfinderInterface;
     QCameraImageCapture *m_imageCapture;
-	QMediaRecorder *m_mediaRecorder;*/
-	static QPushButton *m_capture;
-	static QPushButton *m_mode;
+        QMediaRecorder *m_mediaRecorder;*/
+    static QPushButton *m_capture;
+    static QPushButton *m_mode;
     static QComboBox *m_camerasbox;
     static QComboBox *m_previewsizesbox;
-	static cameraWidgets *m_cameraWidgets;
-	static gboolean m_camera_error;
+    static cameraWidgets *m_cameraWidgets;
+    static gboolean m_camera_error;
 
-	cameraPreviewwidgets *m_previewWid;
+    cameraPreviewwidgets *m_previewWid;
 
     static QList<camerainfo> m_caminfoList;
 
     static int m_cam_index;
     static int m_preview_index;
-	
-	/*
-	 * Global vars
-	 */
-	GMainLoop *loop = NULL;
-	
-	/* commandline options */
-	gchar *videosrc_name = NULL;
+
+    /*
+         * Global vars
+         */
+    GMainLoop *loop = NULL;
+
+    /* commandline options */
+    gchar *videosrc_name = NULL;
     static gchar *videodevice_name;
-	gchar *audiosrc_name = NULL;
-	gchar *wrappersrc_name = NULL;
-	gchar *imagepp_name = NULL;
-	gchar *vfsink_name = NULL;
+    gchar *audiosrc_name = NULL;
+    gchar *wrappersrc_name = NULL;
+    gchar *imagepp_name = NULL;
+    gchar *vfsink_name = NULL;
     static gint image_width;
     static gint image_height;
-    static gfloat view_framerate_num;
+    static gint view_framerate_num;
     static gint view_framerate_den;
-	gboolean no_xwindow = FALSE;
-	gchar *gep_targetname = NULL;
-	gchar *gep_profilename = NULL;
-	gchar *gep_filename = NULL;
+    gboolean no_xwindow = FALSE;
+    gchar *gep_targetname = NULL;
+    gchar *gep_profilename = NULL;
+    gchar *gep_filename = NULL;
     static gchar *image_capture_caps_str;
     static gchar *viewfinder_caps_str;
     static gchar *video_capture_caps_str;
-	gchar *audio_capture_caps_str = NULL;
-	gboolean performance_measure = FALSE;
-	gchar *performance_targets_str = NULL;
-	gchar *camerabin_flags = NULL;
+    gchar *audio_capture_caps_str = NULL;
+    gboolean performance_measure = FALSE;
+    gchar *performance_targets_str = NULL;
+    gchar *camerabin_flags = NULL;
 
-	/* test configuration for common callbacks */
+    /* test configuration for common callbacks */
 
-	gchar *viewfinder_filter = NULL;
+    gchar *viewfinder_filter = NULL;
 
-	int x_width = 320;
-	int x_height = 240;
+    int x_width = 320;
+    int x_height = 240;
 
-	GstClockTime target_startup;
-	GstClockTime target_change_mode;
-	GstClockTime target_shot_to_shot;
-	GstClockTime target_shot_to_save;
-	GstClockTime target_shot_to_snapshot;
-	GstClockTime target_preview_to_precapture;
-	GstClockTime target_shot_to_buffer;
+    GstClockTime target_startup;
+    GstClockTime target_change_mode;
+    GstClockTime target_shot_to_shot;
+    GstClockTime target_shot_to_save;
+    GstClockTime target_shot_to_snapshot;
+    GstClockTime target_preview_to_precapture;
+    GstClockTime target_shot_to_buffer;
 
-	QList<QCameraViewfinderSettings> m_supportedViewfinderSettings;
+    QList<QCameraViewfinderSettings> m_supportedViewfinderSettings;
     static QString m_location;
     QLabel *m_record_time = NULL;
     QTimer *m_timer = NULL;
@@ -401,36 +414,36 @@ private:
     void initLayout();
 
     int getCameraInfos(struct rk_cams_dev_info* cam_infos);
-	void updateSupportedViewfinderSettings();
+    void updateSupportedViewfinderSettings();
     void updateCamerasBox();
     void updatePreviewSizesBox();
-	GstCaps *supportedCaps(int mode) const;
+    GstCaps *supportedCaps(int mode) const;
     void updateCameraParameter();
 
-	static GstPadProbeReturn camera_src_get_timestamp_probe (GstPad * pad, GstPadProbeInfo * info,
-    	gpointer udata);
+    static GstPadProbeReturn camera_src_get_timestamp_probe (GstPad * pad, GstPadProbeInfo * info,
+                                                             gpointer udata);
     static GstPadProbeReturn viewfinder_get_timestamp_probe (GstPad * pad, GstPadProbeInfo * info,
-    	gpointer udata);
-	GstElement * create_ipp_bin (void);
-	GstEncodingProfile * load_encoding_profile (void);
-	static void stop_capture_cb (GObject * self, GParamSpec * pspec, gpointer user_data);
-	static gboolean stop_capture (gpointer user_data);
-	void parse_target_values (void);
-	void print_performance_data (void);
+                                                             gpointer udata);
+    GstElement * create_ipp_bin (void);
+    GstEncodingProfile * load_encoding_profile (void);
+    static void stop_capture_cb (GObject * self, GParamSpec * pspec, gpointer user_data);
+    static gboolean stop_capture (gpointer user_data);
+    void parse_target_values (void);
+    void print_performance_data (void);
 
-	void switchMode();
-	static gboolean run_preview_pipeline (gpointer user_data);
-	static void set_metadata (GstElement * camera);
-	static gboolean run_taking_pipeline (gpointer user_data);
-	static GstBusSyncReply sync_bus_callback (GstBus * bus, GstMessage * message, gpointer data);
-	static gboolean bus_callback (GstBus * bus, GstMessage * message, gpointer data);
-	void cleanup_pipeline (void);
-	gboolean setup_pipeline_element (GstElement * element, const gchar * property_name,
-    	const gchar * element_name, GstElement ** res_elem);
+    void switchMode();
+    static gboolean run_preview_pipeline (gpointer user_data);
+    static void set_metadata (GstElement * camera);
+    static gboolean run_taking_pipeline (gpointer user_data);
+    static GstBusSyncReply sync_bus_callback (GstBus * bus, GstMessage * message, gpointer data);
+    static gboolean bus_callback (GstBus * bus, GstMessage * message, gpointer data);
+    void cleanup_pipeline (void);
+    gboolean setup_pipeline_element (GstElement * element, const gchar * property_name,
+                                     const gchar * element_name, GstElement ** res_elem);
     static void set_camerabin_caps_from_string (void);
-	gboolean setup_pipeline (void);
-	static void notify_readyforcapture (GObject * obj, GParamSpec * pspec,
-		 gpointer user_data);
+    gboolean setup_pipeline (void);
+    static void notify_readyforcapture (GObject * obj, GParamSpec * pspec,
+                                        gpointer user_data);
 
     static void updateCamerabarStatus(gboolean enable);
 
@@ -439,17 +452,17 @@ private:
     void updateRecordTime();
 
 protected:
-	virtual void	showEvent(QShowEvent *event);
-	virtual void	hideEvent(QHideEvent *event);
+    virtual void	showEvent(QShowEvent *event);
+    virtual void	hideEvent(QHideEvent *event);
 
 
 private slots:
-	void slot_pressed();
-	void slot_capture();
-	void slot_released();
+    void slot_pressed();
+    void slot_capture();
+    void slot_released();
 
-	void slot_modeswitch();
-	void handleResults(const QString &);
+    void slot_modeswitch();
+    void handleResults(const QString &);
     void slot_camera_error(QString error);
     void slot_capture_done(QString location);
 
@@ -457,7 +470,7 @@ private slots:
     void slot_previewsize_changed(int index);
     void slot_time_out();
 signals:
-	void sig_openCamera();
+    void sig_openCamera();
     void sig_camera_error(QString error);
     void sig_capture_done(QString location);
 
@@ -468,19 +481,19 @@ class OpenCameraThread : public QThread
 {
     Q_OBJECT
 public:
-	OpenCameraThread(cameraWidgets *parent=0) {mWidgets = parent;}
+    OpenCameraThread(cameraWidgets *parent=0) {mWidgets = parent;}
     ~OpenCameraThread(){qDebug() << "~OpenCameraThread()";}
 
-	void run() {
+    void run() {
         QString result;
         /* expensive or blocking operation  */
-	if (mWidgets)
-	    mWidgets->openCamera();
+        if (mWidgets)
+            mWidgets->openCamera();
         emit resultReady(result);
     }
 
 private:
-	cameraWidgets* mWidgets;
+    cameraWidgets* mWidgets;
 
 
 signals:
