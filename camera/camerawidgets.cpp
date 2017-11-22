@@ -757,9 +757,11 @@ void cameraWidgets::cleanup_pipeline (void)
     if (camerabin) {
         GST_FIXME_OBJECT (camerabin, "stopping and destroying");
         GstElement *camera_source = NULL;
+
         g_object_get (camerabin, "camera-source", &camera_source, NULL);
         if (camera_source)
             g_signal_handler_disconnect (camera_source, ready_for_capture_id);
+
         gst_element_set_state (camerabin, GST_STATE_NULL);
         gst_object_unref (camerabin);
         camerabin = NULL;
@@ -947,7 +949,8 @@ gboolean cameraWidgets::setup_pipeline (void)
     GST_FIXME_OBJECT (camerabin, "camerabin created");
 
     if (camerabin_flags)
-        gst_util_set_object_arg (G_OBJECT (camerabin), "flags", camerabin_flags);
+        gst_util_set_object_arg (G_OBJECT (camerabin), "flags",
+                                 camerabin_flags);
     else
         gst_util_set_object_arg (G_OBJECT (camerabin), "flags", "");
 
@@ -967,10 +970,10 @@ gboolean cameraWidgets::setup_pipeline (void)
         }
 
         g_object_get (wrapper, "video-source", &m_videoSrc, NULL);
-        videodevice_name = g_strdup_printf ("/dev/video%d", m_caminfoList.at(m_cam_index).video_index);
+        videodevice_name = g_strdup_printf ("/dev/video%d",
+                               m_caminfoList.at(m_cam_index).video_index);
         if (videodevice_name == NULL)
             videodevice_name = g_strdup("/dev/video0");
-        g_warning ("opening %s\n", videodevice_name);
         if (m_videoSrc && videodevice_name &&
                 g_object_class_find_property (G_OBJECT_GET_CLASS (m_videoSrc),
                                               "device")) {
@@ -980,12 +983,12 @@ gboolean cameraWidgets::setup_pipeline (void)
 
     /* configure used elements */
     res &=
-            setup_pipeline_element (camerabin, "audio-source", audiosrc_name, NULL);
+          setup_pipeline_element (camerabin, "audio-source", audiosrc_name, NULL);
     res &=
-            setup_pipeline_element (camerabin, "viewfinder-sink", vfsink_name, &sink);
+          setup_pipeline_element (camerabin, "viewfinder-sink", vfsink_name, &sink);
     res &=
-            setup_pipeline_element (camerabin, "viewfinder-filter", viewfinder_filter,
-                                    NULL);
+          setup_pipeline_element (camerabin, "viewfinder-filter", viewfinder_filter,
+                                  NULL);
 
     if (imagepp_name) {
         ipp = create_ipp_bin ();
@@ -996,7 +999,7 @@ gboolean cameraWidgets::setup_pipeline (void)
             GST_WARNING ("Could not create ipp elements");
     }
 
-    prof = create_ogg_profile();//create_mp4_profile ();
+    prof = create_ts_profile();
     if (prof) {
         g_object_set (G_OBJECT (camerabin), "video-profile", prof, NULL);
         gst_encoding_profile_unref (prof);
@@ -1144,41 +1147,18 @@ error:
     return FALSE;
 }
 
-void
-cameraWidgets::stop_capture_cb (GObject * self, GParamSpec * pspec, gpointer user_data)
-{
-    qDebug() << "stop_capture_cb";
-    gboolean idle = FALSE;
-
-    g_object_get (camerabin, "idle", &idle, NULL);
-    qDebug() << "camerabin idle:" << idle;
-
-    if (idle) {
-        recording = FALSE;
-        g_idle_add ((GSourceFunc) run_preview_pipeline, NULL);
-    }
-
-    g_signal_handler_disconnect (camerabin, stop_capture_cb_id);
-}
-
 gboolean
 cameraWidgets::stop_capture (gpointer user_data)
 {
-    stop_capture_cb_id =  g_signal_connect (camerabin, "notify::idle",
-                                            (GCallback) stop_capture_cb, camerabin);
     g_signal_emit_by_name (camerabin, "stop-capture", 0);
     return FALSE;
 }
 
-void cameraWidgets::notify_readyforcapture(GObject * obj,GParamSpec * pspec,gpointer user_data) {
+void cameraWidgets::notify_readyforcapture(GObject * obj,GParamSpec * pspec,
+					   gpointer user_data)
+{
     g_object_get (obj, "ready-for-capture", &ready_for_capture, NULL);
     qDebug() << "notify_readyforcapture:" << ready_for_capture;
-    /*if (mode == MODE_VIDEO && ready_for_capture
-            && !strcmp(m_caminfoList.at(m_cam_index).cam.name, "tc358749xbg")) {
-        //hdmi in record video only get ready-for-capture signal,so change state here.
-        recording = FALSE;
-        emit m_cameraWidgets->sig_capture_done(m_location);
-    }*/
 }
 
 void cameraWidgets::set_metadata (GstElement * camera)
@@ -1214,7 +1194,7 @@ gboolean cameraWidgets::run_taking_pipeline (gpointer user_data)
 
     /* Construct filename */
     if (mode == MODE_VIDEO)
-        filename_suffix = ".mp4";
+        filename_suffix = ".ts";
     else
         filename_suffix = ".jpg";
     QDateTime current_date_time = QDateTime::currentDateTime();
