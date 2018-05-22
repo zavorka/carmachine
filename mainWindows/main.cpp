@@ -38,11 +38,19 @@ int main(int argc, char *argv[])
 
         mainWindow w;
         app.w=&w;
+
+        Qt::WindowFlags flags = w.windowFlags();
+        flags &= ~Qt::FramelessWindowHint;
+        w.setWindowFlags(flags);
+
 #ifdef DEVICE_EVB
         w.showFullScreen();
 #else
         w.showFullScreen();
 #endif
+
+        w.resize(QApplication::desktop()->size());
+
         return app.exec();
     }
     return 0;
